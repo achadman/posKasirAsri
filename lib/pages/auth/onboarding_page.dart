@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class OnboardingPage extends StatelessWidget {
   const OnboardingPage({super.key});
@@ -13,7 +14,7 @@ class OnboardingPage extends StatelessWidget {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [Color(0xFF001D3D), Color(0xFF003566)],
+            colors: [Color(0xFF800000), Color(0xFF1A0000)],
           ),
         ),
         child: SafeArea(
@@ -33,24 +34,30 @@ class OnboardingPage extends StatelessWidget {
                     ),
                   ],
                 ),
-                child: Image.asset('assets/images/logoNgoet.png', width: 220),
+                child: Image.asset('logo/logoSteakAsri.png', width: 200),
               ),
 
               const SizedBox(height: 40),
 
-              const Text(
-                "WarkopNgoetApp",
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                  letterSpacing: 1.2,
+              Center(
+                child: Text(
+                  "Steak Asri Manajemen Apps",
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.alfaSlabOne(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFFEA5700),
+                    letterSpacing: 1.2,
+                  ),
                 ),
               ),
               const SizedBox(height: 10),
-              const Text(
-                "sebuah aplikasi kasir berbasis mobile",
-                style: TextStyle(color: Colors.white70, fontSize: 16),
+              const Center(
+                child: Text(
+                  "Manajemen Kasir Berbasis Mobile",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.white70, fontSize: 16),
+                ),
               ),
 
               const Spacer(flex: 3),
@@ -69,9 +76,8 @@ class OnboardingPage extends StatelessWidget {
                         onPressed: () =>
                             Navigator.pushReplacementNamed(context, '/login'),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFFA50414),
-                          foregroundColor:
-                              Colors.white,
+                          backgroundColor: const Color(0xFFEA5700),
+                          foregroundColor: Colors.white,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(15),
                           ),
@@ -81,7 +87,7 @@ class OnboardingPage extends StatelessWidget {
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Text(
-                              "MULAI SEKARANG",
+                              "Mulai",
                               style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
@@ -95,21 +101,9 @@ class OnboardingPage extends StatelessWidget {
                     ),
 
                     const SizedBox(height: 20),
-                    GestureDetector(
-                      onTap: () => Navigator.pushNamed(context, '/timPengembang'),
-                      child: const Text(
-                        "Tim Pengembang",
-                        style: TextStyle(
-                          color: Color(0xFFF0E8A7),
-                          fontWeight: FontWeight.bold,
-                          decoration: TextDecoration.underline,
-                        ),
-                      ),
-                    ),
                   ],
                 ),
               ),
-
             ],
           ),
         ),

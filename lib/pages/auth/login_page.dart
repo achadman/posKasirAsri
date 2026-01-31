@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/pages/admin_page.dart';
-import 'package:flutter_application_1/pages/kasir_page.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart'; // Ganti Firebase
 
 class LoginPage extends StatefulWidget {
@@ -49,15 +48,9 @@ class _LoginPageState extends State<LoginPage> {
 
         // 3. Navigasi berdasarkan role
         if (role == 'admin' || role == 'owner') {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => const AdminPage()),
-          );
+          Navigator.pushReplacementNamed(context, '/admin');
         } else {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => const KasirPage()),
-          );
+          Navigator.pushReplacementNamed(context, '/kasir');
         }
       }
     } on AuthException catch (e) {
@@ -86,7 +79,7 @@ class _LoginPageState extends State<LoginPage> {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [Color(0xFF001D3D), Color(0xFF003566)],
+            colors: [Color(0xFF800000), Color(0xFF1A0000)],
           ),
         ),
         child: Center(
@@ -97,17 +90,14 @@ class _LoginPageState extends State<LoginPage> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   // Logo Warkop Ngoet
-                  const Icon(
-                    Icons.coffee_rounded,
-                    size: 100,
-                    color: Colors.white,
-                  ),
+                  // Logo Steak Asri
+                  Image.asset('logo/logoSteakAsri.png', width: 150),
                   const SizedBox(height: 20),
-                  const Text(
-                    "WARKOP NGOET",
-                    style: TextStyle(
+                  Text(
+                    "STEAK ASRI",
+                    style: GoogleFonts.alfaSlabOne(
                       fontSize: 28,
-                      fontWeight: FontWeight.bold,
+                      fontWeight: FontWeight.w500,
                       letterSpacing: 2,
                       color: Colors.white,
                     ),
@@ -142,8 +132,8 @@ class _LoginPageState extends State<LoginPage> {
                     child: ElevatedButton(
                       onPressed: _isLoading ? null : _login,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFF0E8A7),
-                        foregroundColor: const Color(0xFF001D3D),
+                        backgroundColor: const Color(0xFFEA5700),
+                        foregroundColor: Colors.white,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(15),
                         ),
@@ -176,7 +166,7 @@ class _LoginPageState extends State<LoginPage> {
                         child: const Text(
                           "Daftar Sekarang",
                           style: TextStyle(
-                            color: Color(0xFFF0E8A7),
+                            color: Color(0xFFEA5700),
                             fontWeight: FontWeight.bold,
                             decoration: TextDecoration.underline,
                           ),
@@ -204,7 +194,7 @@ class _LoginPageState extends State<LoginPage> {
       obscureText: isObscure,
       style: const TextStyle(color: Colors.white),
       decoration: InputDecoration(
-        prefixIcon: Icon(icon, color: const Color(0xFFF0E8A7)),
+        prefixIcon: Icon(icon, color: const Color(0xFFEA5700)),
         labelText: label,
         labelStyle: const TextStyle(color: Colors.white70),
         filled: true,
