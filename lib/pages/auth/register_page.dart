@@ -101,7 +101,7 @@ class _RegisterPageState extends State<RegisterPage> {
               child: Column(
                 children: [
                   const SizedBox(height: 60),
-                  Image.asset('logo/logoSteakAsri.png', width: 100),
+                  Image.asset('assets/logo/logoSteakAsri.png', width: 100),
                   const SizedBox(height: 20),
                   Text(
                     "DAFTAR AKUN",
@@ -160,7 +160,7 @@ class _RegisterPageState extends State<RegisterPage> {
   }) {
     // Pengamanan ekstra: jika _obscurePassword null, paksa jadi true
     final bool safeObscureValue = isPassword
-        ? (_obscurePassword ?? true)
+        ? (_obscurePassword)
         : false;
 
     return TextField(
@@ -177,7 +177,7 @@ class _RegisterPageState extends State<RegisterPage> {
                 ),
                 onPressed: () {
                   setState(() {
-                    _obscurePassword = !(_obscurePassword ?? true);
+                    _obscurePassword = !(_obscurePassword);
                   });
                 },
               )

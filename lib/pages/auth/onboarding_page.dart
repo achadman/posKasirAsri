@@ -34,7 +34,7 @@ class OnboardingPage extends StatelessWidget {
                     ),
                   ],
                 ),
-                child: Image.asset('logo/logoSteakAsri.png', width: 200),
+                child: Image.asset('assets/logo/logoSteakAsri.png', width: 200),
               ),
 
               const SizedBox(height: 40),
@@ -46,7 +46,7 @@ class OnboardingPage extends StatelessWidget {
                   style: GoogleFonts.alfaSlabOne(
                     fontSize: 28,
                     fontWeight: FontWeight.bold,
-                    color: Color(0xFFEA5700),
+                    color: const Color(0xFFEA5700),
                     letterSpacing: 1.2,
                   ),
                 ),

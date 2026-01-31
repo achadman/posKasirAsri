@@ -52,9 +52,6 @@ class _AddMenuPageState extends State<AddMenuPage> {
     }
   }
 
-  void _removeTopping(int index) {
-    setState(() => toppingList.removeAt(index));
-  }
 
   // LOGIKA SIMPAN KE SUPABASE
   void _saveToDatabase() async {

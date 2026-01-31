@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../../widgets/floating_card.dart';
 import '../../widgets/glass_app_bar.dart';
+import '../../widgets/product_grid.dart'; // Shared Widget
 
 class KasirPage extends StatefulWidget {
   const KasirPage({super.key});
@@ -14,16 +14,11 @@ class KasirPage extends StatefulWidget {
 
 class _KasirPageState extends State<KasirPage> {
   final supabase = Supabase.instance.client;
-  final currencyFormat = NumberFormat.currency(
-    locale: 'id',
-    symbol: 'Rp ',
-    decimalDigits: 0,
-  );
 
   String? _storeId;
   String _selectedCategory = "Semua";
   String _searchQuery = "";
-  Map<String, int> _cart = {}; // ProductID -> Qty
+  final Map<String, int> _cart = {}; // ProductID -> Qty
   final List<String> _categories = [
     "Semua",
     "Steak",
@@ -33,7 +28,6 @@ class _KasirPageState extends State<KasirPage> {
     "Snack",
   ];
 
-  // Modern Clean Palette
   final Color _bgColor = const Color(0xFFF8F9FD); // Cool Light Grey
   final Color _primaryColor = const Color(0xFFFF4D4D); // Vibrant Red
   final Color _textHeading = const Color(0xFF2D3436); // Charcoal
@@ -188,183 +182,62 @@ class _KasirPageState extends State<KasirPage> {
             ),
           ),
           const SizedBox(height: 16),
-          // Product Grid
+          // Product Grid (Shared Widget)
           Expanded(
             child: _storeId == null
                 ? const Center(child: CircularProgressIndicator())
-                : StreamBuilder<List<Map<String, dynamic>>>(
-                    stream: supabase
-                        .from('products')
-                        .stream(primaryKey: ['id'])
-                        .eq('store_id', _storeId!),
-                    builder: (context, snapshot) {
-                      if (!snapshot.hasData) {
-                        return Center(
-                          child: CircularProgressIndicator(
-                            color: _primaryColor,
-                          ),
-                        );
-                      }
-
-                      var products = snapshot.data!;
-                      // Filter by Search
-                      if (_searchQuery.isNotEmpty) {
-                        products = products
-                            .where(
-                              (p) => p['name']
-                                  .toString()
-                                  .toLowerCase()
-                                  .contains(_searchQuery),
+                : ProductGrid(
+                    storeId: _storeId!,
+                    searchQuery: _searchQuery,
+                    categoryFilter: _selectedCategory,
+                    onItemTap: (p) => _addToCart(p['id']),
+                    actionBuilder: (context, p) {
+                      int qty = _cart[p['id']] ?? 0;
+                      return qty == 0
+                          ? SizedBox(
+                              width: double.infinity,
+                              height: 36,
+                              child: ElevatedButton(
+                                onPressed: () => _addToCart(p['id']),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.white,
+                                  foregroundColor: _primaryColor,
+                                  elevation: 0,
+                                  side: BorderSide(
+                                    color: _primaryColor.withOpacity(0.5),
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
+                                child: Text(
+                                  "Tambah",
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
                             )
-                            .toList();
-                      }
-                      // Filter by Category (Mock logic as DB doesn't have Category yet)
-                      // In real implementation: .where((p) => p['category'] == _selectedCategory)
-
-                      if (products.isEmpty) {
-                        return Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.search_off_rounded,
-                                size: 60,
-                                color: Colors.grey[300],
-                              ),
-                              const SizedBox(height: 10),
-                              Text(
-                                "Menu tidak ditemukan",
-                                style: GoogleFonts.inter(
-                                  color: Colors.grey[500],
-                                ),
-                              ),
-                            ],
-                          ),
-                        );
-                      }
-
-                      return GridView.builder(
-                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
-                        gridDelegate:
-                            const SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: 2,
-                              childAspectRatio: 0.72,
-                              crossAxisSpacing: 16,
-                              mainAxisSpacing: 16,
-                            ),
-                        itemCount: products.length,
-                        itemBuilder: (context, i) {
-                          final p = products[i];
-                          int qty = _cart[p['id']] ?? 0;
-                          return FloatingCard(
-                            padding: EdgeInsets.zero,
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                          : Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Expanded(
-                                  child: Container(
-                                    decoration: BoxDecoration(
-                                      color: Colors.grey[50],
-                                      borderRadius: const BorderRadius.vertical(
-                                        top: Radius.circular(24),
-                                      ),
-                                    ),
-                                    child: Center(
-                                      child: Icon(
-                                        Icons.fastfood_rounded,
-                                        size: 40,
-                                        color: Colors.orange[100],
-                                      ),
-                                    ),
+                                _circleBtn(
+                                  Icons.remove,
+                                  () => _removeFromCart(p['id']),
+                                ),
+                                Text(
+                                  "$qty",
+                                  style: GoogleFonts.poppins(
+                                    fontWeight: FontWeight.bold,
                                   ),
                                 ),
-                                Padding(
-                                  padding: const EdgeInsets.all(12),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        p['name'],
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: GoogleFonts.poppins(
-                                          fontWeight: FontWeight.w600,
-                                          color: _textHeading,
-                                          fontSize: 15,
-                                        ),
-                                      ),
-                                      Text(
-                                        currencyFormat.format(p['sale_price']),
-                                        style: GoogleFonts.inter(
-                                          color: _primaryColor,
-                                          fontWeight: FontWeight.w600,
-                                          fontSize: 13,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 8),
-                                      qty == 0
-                                          ? SizedBox(
-                                              width: double.infinity,
-                                              height: 36,
-                                              child: ElevatedButton(
-                                                onPressed: () =>
-                                                    _addToCart(p['id']),
-                                                style: ElevatedButton.styleFrom(
-                                                  backgroundColor: Colors.white,
-                                                  foregroundColor:
-                                                      _primaryColor,
-                                                  elevation: 0,
-                                                  side: BorderSide(
-                                                    color: _primaryColor
-                                                        .withOpacity(0.5),
-                                                  ),
-                                                  shape: RoundedRectangleBorder(
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                          12,
-                                                        ),
-                                                  ),
-                                                ),
-                                                child: Text(
-                                                  "Tambah",
-                                                  style: GoogleFonts.poppins(
-                                                    fontSize: 12,
-                                                    fontWeight: FontWeight.w600,
-                                                  ),
-                                                ),
-                                              ),
-                                            )
-                                          : Row(
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment
-                                                      .spaceBetween,
-                                              children: [
-                                                _circleBtn(
-                                                  Icons.remove,
-                                                  () =>
-                                                      _removeFromCart(p['id']),
-                                                ),
-                                                Text(
-                                                  "$qty",
-                                                  style: GoogleFonts.poppins(
-                                                    fontWeight: FontWeight.bold,
-                                                  ),
-                                                ),
-                                                _circleBtn(
-                                                  Icons.add,
-                                                  () => _addToCart(p['id']),
-                                                ),
-                                              ],
-                                            ),
-                                    ],
-                                  ),
+                                _circleBtn(
+                                  Icons.add,
+                                  () => _addToCart(p['id']),
                                 ),
                               ],
-                            ),
-                          );
-                        },
-                      );
+                            );
                     },
                   ),
           ),

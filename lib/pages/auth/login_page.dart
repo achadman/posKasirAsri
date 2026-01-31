@@ -91,7 +91,7 @@ class _LoginPageState extends State<LoginPage> {
                 children: [
                   // Logo Warkop Ngoet
                   // Logo Steak Asri
-                  Image.asset('logo/logoSteakAsri.png', width: 150),
+                  Image.asset('assets/logo/logoSteakAsri.png', width: 150),
                   const SizedBox(height: 20),
                   Text(
                     "STEAK ASRI",
