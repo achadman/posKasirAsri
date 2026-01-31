@@ -18,7 +18,6 @@ class _RegisterPageState extends State<RegisterPage> {
   final TextEditingController _fullNameController = TextEditingController();
 
   // Inisialisasi variabel status dengan nilai pasti (bukan null)
-  String _selectedRole = 'cashier';
   bool _isLoading = false;
   bool _obscurePassword = true; // Proteksi awal: dipastikan tidak null
 
@@ -38,21 +37,18 @@ class _RegisterPageState extends State<RegisterPage> {
         password: _passwordController.text.trim(),
         data: {
           'full_name': _fullNameController.text.trim(),
-          'role': _selectedRole,
+          'role': 'owner', // Default ke Owner
         },
       );
 
-      // Force update profile role to ensure it defaults correctly
-      // This handles cases where the DB Trigger might default to Owner or ignore metadata
       if (res.user != null) {
         try {
           await supabase
               .from('profiles')
-              .update({'role': _selectedRole})
+              .update({'role': 'owner'})
               .eq('id', res.user!.id);
         } catch (_) {
-          // If email confirmation is ON, we might not be able to update yet due to RLS.
-          // That is expected, but if we ARE logged in, this ensures correctness.
+          // Expected if email confirmation is required
         }
       }
 
@@ -133,10 +129,6 @@ class _RegisterPageState extends State<RegisterPage> {
                     Icons.lock_outline,
                     isPassword: true,
                   ),
-                  const SizedBox(height: 20),
-
-                  _buildRoleDropdown(),
-
                   const SizedBox(height: 40),
                   _buildRegisterButton(),
                   const SizedBox(height: 30),
@@ -189,36 +181,6 @@ class _RegisterPageState extends State<RegisterPage> {
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(15),
           borderSide: BorderSide.none,
-        ),
-      ),
-    );
-  }
-
-  // Helper Widget untuk Dropdown
-  Widget _buildRoleDropdown() {
-    return Theme(
-      data: Theme.of(context).copyWith(canvasColor: const Color(0xFFEA5700)),
-      child: DropdownButtonFormField<String>(
-        initialValue: _selectedRole,
-        style: const TextStyle(color: Colors.white),
-        items: const [
-          DropdownMenuItem(value: 'owner', child: Text("OWNER")),
-          DropdownMenuItem(value: 'cashier', child: Text("KASIR")),
-        ],
-        onChanged: (val) => setState(() => _selectedRole = val ?? 'cashier'),
-        decoration: InputDecoration(
-          prefixIcon: const Icon(
-            Icons.badge_outlined,
-            color: Color(0xFFEA5700),
-          ),
-          labelText: "Pilih Role",
-          labelStyle: const TextStyle(color: Colors.white70),
-          filled: true,
-          fillColor: Colors.white.withOpacity(0.1),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(15),
-            borderSide: BorderSide.none,
-          ),
         ),
       ),
     );

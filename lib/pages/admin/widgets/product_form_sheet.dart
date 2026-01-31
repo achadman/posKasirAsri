@@ -81,6 +81,80 @@ class _ProductFormSheetState extends State<ProductFormSheet> {
     }
   }
 
+  Future<void> _showAddCategoryDialog() async {
+    final controller = TextEditingController();
+    final newCategory = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: Theme.of(context).cardColor,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text(
+          "Tambah Kategori",
+          style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.bold),
+        ),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          decoration: InputDecoration(
+            hintText: "Nama Kategori (Contoh: Makanan, Minuman)",
+            fillColor: Colors.grey.withOpacity(0.1),
+            filled: true,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide.none,
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text("Batal", style: GoogleFonts.inter(color: Colors.grey)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: _primaryColor,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+            onPressed: () => Navigator.pop(context, controller.text.trim()),
+            child: const Text("Simpan", style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+
+    if (newCategory != null && newCategory.isNotEmpty) {
+      setState(() => _isLoading = true);
+      try {
+        final res = await supabase
+            .from('categories')
+            .insert({
+              'name': newCategory,
+              'store_id': widget.storeId,
+            })
+            .select()
+            .single();
+
+        await _loadCategories();
+        setState(() {
+          _selectedCategoryId = res['id'];
+        });
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text("Gagal menambah kategori: $e"),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      } finally {
+        if (mounted) setState(() => _isLoading = false);
+      }
+    }
+  }
+
   Future<void> _pickImage() async {
     final XFile? pickedFile = await _picker.pickImage(
       source: ImageSource.gallery,
@@ -471,12 +545,22 @@ class _ProductFormSheetState extends State<ProductFormSheet> {
   Widget _buildCategoryDropdown(Color fillColor, Color textColor) {
     return DropdownButtonFormField<String>(
       value: _selectedCategoryId,
+      isExpanded: true, // Prevent text overflow
       dropdownColor: Theme.of(context).cardColor,
-      style: GoogleFonts.inter(color: textColor, fontWeight: FontWeight.w500),
+      style: GoogleFonts.inter(
+        color: textColor,
+        fontWeight: FontWeight.w500,
+      ),
       decoration: InputDecoration(
         labelText: "Kategori",
         labelStyle: GoogleFonts.inter(color: Colors.grey[500]),
         prefixIcon: Icon(Icons.category_rounded, color: _primaryColor),
+        // Shortcut button inside the dropdown
+        suffixIcon: IconButton(
+          onPressed: _showAddCategoryDialog,
+          icon: Icon(Icons.add_circle_outline_rounded, color: _primaryColor),
+          tooltip: "Tambah Kategori Baru",
+        ),
         filled: true,
         fillColor: fillColor,
         contentPadding: const EdgeInsets.symmetric(

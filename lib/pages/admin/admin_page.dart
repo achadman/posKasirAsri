@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'widgets/product_form_sheet.dart';
 import 'widgets/finance_report.dart'; // Extracted Widget
+import 'profile_page.dart';
 import '../../widgets/product_grid.dart'; // Extracted Reusable Widget
 import '../../controllers/theme_controller.dart';
 import 'package:intl/intl.dart';
@@ -190,88 +191,6 @@ class _AdminPageState extends State<AdminPage> {
                     ),
                   ),
                   const Spacer(),
-                  // Theme Toggle
-                  ValueListenableBuilder<ThemeMode>(
-                    valueListenable: ThemeController.instance.themeMode,
-                    builder: (context, mode, child) {
-                      final isDarkMode = mode == ThemeMode.dark;
-                      return GestureDetector(
-                        onTap: () => ThemeController.instance.toggleTheme(),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 4,
-                            vertical: 4,
-                          ),
-                          width: 55,
-                          height: 32,
-                          decoration: BoxDecoration(
-                            color: isDarkMode
-                                ? Colors.grey[800]
-                                : Colors.grey[200],
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Stack(
-                            children: [
-                              AnimatedAlign(
-                                duration: const Duration(milliseconds: 200),
-                                curve: Curves.easeInOut,
-                                alignment: isDarkMode
-                                    ? Alignment.centerRight
-                                    : Alignment.centerLeft,
-                                child: Container(
-                                  width: 24,
-                                  height: 24,
-                                  decoration: const BoxDecoration(
-                                    color: Colors.white,
-                                    shape: BoxShape.circle,
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Colors.black12,
-                                        blurRadius: 2,
-                                      ),
-                                    ],
-                                  ),
-                                  child: Icon(
-                                    isDarkMode
-                                        ? Icons.nightlight_round
-                                        : Icons.wb_sunny_rounded,
-                                    size: 16,
-                                    color: isDarkMode
-                                        ? Colors.indigo
-                                        : Colors.orange,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                  const SizedBox(width: 8),
-                  // Logout Button
-                  InkWell(
-                    onTap: () async {
-                      await supabase.auth.signOut();
-                      if (context.mounted) {
-                        Navigator.pushReplacementNamed(context, '/login');
-                      }
-                    },
-                    borderRadius: BorderRadius.circular(50),
-                    child: Container(
-                      width: 32,
-                      height: 32,
-                      decoration: BoxDecoration(
-                        color: Colors.red.withOpacity(0.1),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.logout_rounded,
-                        color: Colors.red,
-                        size: 18,
-                      ),
-                    ),
-                  ),
                 ],
               ),
             ),
@@ -372,6 +291,9 @@ class _AdminPageState extends State<AdminPage> {
 
                   // Tab 1: Finance
                   FinanceReport(storeId: _storeId!),
+
+                  // Tab 2: Profile
+                  ProfilePage(storeId: _storeId!),
                 ],
               ),
             ),
@@ -412,6 +334,10 @@ class _AdminPageState extends State<AdminPage> {
             BottomNavigationBarItem(
               icon: Icon(Icons.pie_chart_rounded),
               label: "Laporan",
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.person_outline_rounded),
+              label: "Profil",
             ),
           ],
         ),
