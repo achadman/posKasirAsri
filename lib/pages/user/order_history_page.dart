@@ -49,8 +49,6 @@ class _OrderHistoryPageState extends State<OrderHistoryPage> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
       appBar: AppBar(
@@ -146,7 +144,7 @@ class _OrderHistoryPageState extends State<OrderHistoryPage> {
                                 _currencyFormat.format(qty * price),
                               ),
                             );
-                          }).toList(),
+                          }),
                           const SizedBox(height: 8),
                         ],
                       ),

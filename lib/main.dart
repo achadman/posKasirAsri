@@ -15,6 +15,8 @@ import 'pages/other/splash_page.dart';
 import 'pages/user/order_history_page.dart'; // Added
 import 'package:intl/date_symbol_data_local.dart'; // Added
 
+final supabase = Supabase.instance.client;
+
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
   runApp(const RootApp());
@@ -50,32 +52,6 @@ class _RootAppState extends State<RootApp> {
 
     await Future.wait([minSplashTime, supabaseInit, localeInit]);
   }
-
-  @override
-  Widget build(BuildContext context) {
-    return FutureBuilder(
-      future: _initFuture,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.done) {
-          return const MyApp();
-        }
-
-        return MaterialApp(
-          debugShowCheckedModeBanner: false,
-          theme: ThemeData.dark().copyWith(
-            scaffoldBackgroundColor: const Color(0xFF1A0000),
-          ),
-          home: const SplashPage(),
-        );
-      },
-    );
-  }
-}
-
-final supabase = Supabase.instance.client;
-
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -116,27 +92,29 @@ class MyApp extends StatelessWidget {
               },
             ),
           ),
-
-          // Menggunakan home dengan StreamBuilder untuk cek sesi login
-          home: StreamBuilder<AuthState>(
-            stream: supabase.auth.onAuthStateChange,
+          home: FutureBuilder(
+            future: _initFuture,
             builder: (context, snapshot) {
-              // Tampilkan loading saat mengecek sesi
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Scaffold(
-                  body: Center(child: CircularProgressIndicator()),
-                );
+              if (snapshot.connectionState != ConnectionState.done) {
+                return const SplashPage();
               }
+              // JIKA INITIALIZATION SELESAI, CEK AUTH
+              return StreamBuilder<AuthState>(
+                stream: Supabase.instance.client.auth.onAuthStateChange,
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Scaffold(
+                      body: Center(child: CircularProgressIndicator()),
+                    );
+                  }
 
-              final session = snapshot.data?.session;
+                  if (snapshot.data?.session != null) {
+                    return const AuthGate();
+                  }
 
-              // JIKA SUDAH LOGIN (Sesi ditemukan)
-              if (session != null) {
-                return const AuthGate(); // Kita arahkan ke gerbang pengecekan Role
-              }
-
-              // JIKA BELUM LOGIN (Sesi null)
-              return const OnboardingPage();
+                  return const OnboardingPage();
+                },
+              );
             },
           ),
 
@@ -159,7 +137,8 @@ class MyApp extends StatelessWidget {
                 page = const KasirPage();
                 break;
               case '/laporan':
-                page = const LaporanPage();
+                final args = settings.arguments as Map<String, dynamic>?;
+                page = LaporanPage(storeId: args?['storeId'] ?? '');
                 break;
               case '/attendance':
                 page = const AttendancePage();

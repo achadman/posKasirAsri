@@ -5,7 +5,6 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../controllers/theme_controller.dart';
 import 'employee_page.dart';
-import 'attendance_report_page.dart';
 import 'package:flutter/cupertino.dart';
 
 class ProfilePage extends StatefulWidget {
@@ -34,12 +33,11 @@ class _ProfilePageState extends State<ProfilePage> {
   Future<void> _loadProfile() async {
     final user = supabase.auth.currentUser;
     if (user == null) return;
-
     setState(() => _isLoading = true);
     try {
       final profile = await supabase
           .from('profiles')
-          .select('full_name, avatar_url')
+          .select('full_name')
           .eq('id', user.id)
           .maybeSingle();
 
@@ -97,10 +95,11 @@ class _ProfilePageState extends State<ProfilePage> {
 
       final url = supabase.storage.from('avatars').getPublicUrl(filePath);
 
-      await supabase
-          .from('profiles')
-          .update({'avatar_url': url})
-          .eq('id', user.id);
+      // Note: avatar_url removed because column does not exist in profiles table
+      // await supabase
+      //     .from('profiles')
+      //     .update({'avatar_url': url})
+      //     .eq('id', user.id);
 
       setState(() => _avatarUrl = url);
 
@@ -149,7 +148,7 @@ class _ProfilePageState extends State<ProfilePage> {
           ),
           decoration: InputDecoration(
             hintText: "Nama Lengkap",
-            fillColor: Colors.grey.withOpacity(0.1),
+            fillColor: Colors.grey.withValues(alpha: 0.1),
             filled: true,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
@@ -262,7 +261,7 @@ class _ProfilePageState extends State<ProfilePage> {
           ),
           decoration: InputDecoration(
             hintText: "Nama Toko (Contoh: Steak Asri)",
-            fillColor: Colors.grey.withOpacity(0.1),
+            fillColor: Colors.grey.withValues(alpha: 0.1),
             filled: true,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
@@ -308,7 +307,6 @@ class _ProfilePageState extends State<ProfilePage> {
   @override
   Widget build(BuildContext context) {
     final user = supabase.auth.currentUser;
-    final theme = Theme.of(context);
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FD),
@@ -321,10 +319,14 @@ class _ProfilePageState extends State<ProfilePage> {
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            const SizedBox(height: 20),
+      body: Column(
+        children: [
+          if (_isLoading) const LinearProgressIndicator(),
+          Expanded(
+            child: SingleChildScrollView(
+              child: Column(
+                children: [
+                  const SizedBox(height: 20),
             _buildProfileHeader(user),
             const SizedBox(height: 30),
             _buildSectionTitle("PENGATURAN AKUN"),
@@ -388,8 +390,8 @@ class _ProfilePageState extends State<ProfilePage> {
                 child: OutlinedButton.icon(
                   onPressed: () async {
                     await supabase.auth.signOut();
-                    if (mounted)
-                      Navigator.pushReplacementNamed(context, '/login');
+                    if (!context.mounted) return;
+                    Navigator.pushReplacementNamed(context, '/login');
                   },
                   icon: const Icon(CupertinoIcons.power, color: Colors.red),
                   label: Text(
@@ -408,9 +410,11 @@ class _ProfilePageState extends State<ProfilePage> {
                 ),
               ),
             ),
-            const SizedBox(height: 50),
-          ],
-        ),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -574,8 +578,8 @@ class _ProfilePageState extends State<ProfilePage> {
             secondary: Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: (isDark ? Colors.indigo : Colors.orange).withOpacity(
-                  0.1,
+                color: (isDark ? Colors.indigo : Colors.orange).withValues(
+                  alpha: 0.1,
                 ),
                 borderRadius: BorderRadius.circular(12),
               ),
@@ -593,7 +597,7 @@ class _ProfilePageState extends State<ProfilePage> {
               ),
             ),
             value: isDark,
-            activeColor: _primaryColor,
+            activeThumbColor: _primaryColor, // fixed deprecated activeColor
             onChanged: (val) => ThemeController.instance.toggleTheme(),
           );
         },

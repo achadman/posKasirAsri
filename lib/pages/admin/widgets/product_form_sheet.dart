@@ -97,7 +97,7 @@ class _ProductFormSheetState extends State<ProductFormSheet> {
           autofocus: true,
           decoration: InputDecoration(
             hintText: "Nama Kategori (Contoh: Makanan, Minuman)",
-            fillColor: Colors.grey.withOpacity(0.1),
+            fillColor: Colors.grey.withValues(alpha: 0.1),
             filled: true,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
@@ -233,9 +233,11 @@ class _ProductFormSheetState extends State<ProductFormSheet> {
 
       if (mounted) Navigator.pop(context, true); // Return true on success
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Error: $e"), backgroundColor: Colors.red),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Error: $e"), backgroundColor: Colors.red),
+        );
+      }
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }

@@ -36,22 +36,31 @@ class _RegisterPageState extends State<RegisterPage> {
 
     setState(() => _isLoading = true);
     try {
+      final email = _emailController.text.trim();
+
+      // Mendaftarkan user baru dengan role default 'owner'
+      // Jika di masa depan ada sistem undangan, role bisa diambil dari invite meta.
       final AuthResponse res = await supabase.auth.signUp(
-        email: _emailController.text.trim(),
+        email: email,
         password: _passwordController.text.trim(),
         data: {
-          'role': 'owner', // Default ke Owner
-          // 'full_name': ... (skipped as per UI)
+          'role': 'owner',
         },
       );
 
       if (res.user != null) {
-        try {
-          await supabase
-              .from('profiles')
-              .update({'role': 'owner'})
-              .eq('id', res.user!.id);
-        } catch (_) {}
+        // 1. Create unique store for new owner
+        final storeRes = await supabase.from('stores').insert({
+          'name': 'Toko Saya',
+        }).select().single();
+        
+        final String newStoreId = storeRes['id'];
+
+        // 2. Update profil yang dibuat oleh trigger Supabase
+        await supabase.from('profiles').update({
+          'role': 'owner',
+          'store_id': newStoreId,
+        }).eq('id', res.user!.id);
       }
 
       if (!mounted) return;
@@ -66,7 +75,7 @@ class _RegisterPageState extends State<RegisterPage> {
     } on AuthException catch (e) {
       _showError(e.message);
     } catch (e) {
-      _showError("Terjadi kesalahan tak terduga");
+      _showError("Kesalahan: $e");
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }

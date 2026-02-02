@@ -1,0 +1,239 @@
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+
+class AdminDrawer extends StatelessWidget {
+  final String? userName;
+  final String? profileUrl;
+  final String? storeName;
+  final String? storeLogo;
+  final String? role;
+  final Color primaryColor;
+  final VoidCallback onProfileTap;
+  final VoidCallback onInventoryTap;
+  final VoidCallback onCategoryTap;
+  final VoidCallback onKasirTap;
+  final VoidCallback onLogoutTap;
+
+  const AdminDrawer({
+    super.key,
+    this.userName,
+    this.profileUrl,
+    this.storeName,
+    this.storeLogo,
+    this.role,
+    required this.primaryColor,
+    required this.onProfileTap,
+    required this.onInventoryTap,
+    required this.onCategoryTap,
+    required this.onKasirTap,
+    required this.onLogoutTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Drawer(
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.horizontal(right: Radius.circular(32)),
+      ),
+      child: Column(
+        children: [
+          _buildDrawerHeader(),
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.symmetric(horizontal: 10),
+              children: [
+                _buildDrawerSectionTitle("UTAMA"),
+                _buildDrawerItem(
+                  icon: CupertinoIcons.square_grid_2x2,
+                  label: "Dashboard",
+                  onTap: () => Navigator.pop(context),
+                  isActive: true,
+                ),
+                _buildDrawerSectionTitle("OPERASIONAL"),
+                _buildDrawerItem(
+                  icon: CupertinoIcons.cube_box,
+                  label: "Inventori Barang",
+                  onTap: () {
+                    Navigator.pop(context);
+                    onInventoryTap();
+                  },
+                ),
+                _buildDrawerItem(
+                  icon: CupertinoIcons.grid,
+                  label: "Manajemen Kategori",
+                  onTap: () {
+                    Navigator.pop(context);
+                    onCategoryTap();
+                  },
+                ),
+                _buildDrawerItem(
+                  icon: CupertinoIcons.bag,
+                  label: "Data Pembelian",
+                  onTap: () {},
+                ),
+                _buildDrawerItem(
+                  icon: CupertinoIcons.cart,
+                  label: "Kasir (POS)",
+                  onTap: () {
+                    Navigator.pop(context);
+                    onKasirTap();
+                  },
+                ),
+                _buildDrawerItem(
+                  icon: CupertinoIcons.doc_text,
+                  label: "Riwayat Transaksi",
+                  onTap: () {},
+                ),
+                if (role == 'owner' || role == 'admin') ...[
+                  _buildDrawerSectionTitle("LAINNYA"),
+                  _buildDrawerItem(
+                    icon: CupertinoIcons.graph_square,
+                    label: "Laporan Analitik",
+                    onTap: () {},
+                  ),
+                ],
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(20),
+            child: _buildDrawerItem(
+              icon: CupertinoIcons.power,
+              label: "Keluar Sesi",
+              color: Colors.red,
+              onTap: onLogoutTap,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDrawerHeader() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(20, 60, 20, 30),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [primaryColor, primaryColor.withValues(alpha: 0.8)],
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Stack(
+            children: [
+              CircleAvatar(
+                radius: 35,
+                backgroundColor: Colors.white,
+                backgroundImage: profileUrl != null
+                    ? NetworkImage(profileUrl!)
+                    : null,
+                child: profileUrl == null
+                    ? const Icon(Icons.person, size: 40, color: Colors.grey)
+                    : null,
+              ),
+              if (storeLogo != null)
+                Positioned(
+                  right: 0,
+                  bottom: 0,
+                  child: Container(
+                    padding: const EdgeInsets.all(2),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.1),
+                          blurRadius: 4,
+                        ),
+                      ],
+                    ),
+                    child: CircleAvatar(
+                      radius: 12,
+                      backgroundColor: Colors.white,
+                      backgroundImage: NetworkImage(storeLogo!),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 15),
+          GestureDetector(
+            onTap: onProfileTap,
+            child: Text(
+              userName ?? 'User',
+              style: GoogleFonts.poppins(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
+          ),
+          Container(
+            margin: const EdgeInsets.only(top: 5),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.2),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Text(
+              storeName ?? "Administrator",
+              style: GoogleFonts.inter(
+                fontSize: 12,
+                color: Colors.white,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDrawerSectionTitle(String title) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 25, 16, 10),
+      child: Text(
+        title,
+        style: GoogleFonts.inter(
+          fontSize: 12,
+          fontWeight: FontWeight.bold,
+          color: Colors.grey[400],
+          letterSpacing: 1.2,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDrawerItem({
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+    Color? color,
+    bool isActive = false,
+  }) {
+    return ListTile(
+      leading: Icon(
+        icon,
+        color: isActive ? primaryColor : (color ?? Colors.grey[700]),
+      ),
+      title: Text(
+        label,
+        style: GoogleFonts.inter(
+          fontSize: 15,
+          fontWeight: isActive ? FontWeight.bold : FontWeight.w500,
+          color: isActive ? primaryColor : (color ?? Colors.grey[800]),
+        ),
+      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      selected: isActive,
+      selectedTileColor: primaryColor.withValues(alpha: 0.05),
+      onTap: onTap,
+    );
+  }
+}

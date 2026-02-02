@@ -64,10 +64,12 @@ class _AttendanceReportPageState extends State<AttendanceReportPage> {
                   .eq('store_id', widget.storeId)
                   .order('clock_in', ascending: false),
               builder: (context, snapshot) {
-                if (snapshot.hasError)
+                if (snapshot.hasError) {
                   return Center(child: Text("Error: ${snapshot.error}"));
-                if (!snapshot.hasData)
+                }
+                if (!snapshot.hasData) {
                   return const Center(child: CircularProgressIndicator());
+                }
 
                 // Filter by selected date locally for the stream
                 final filteredLogs = snapshot.data!.where((log) {

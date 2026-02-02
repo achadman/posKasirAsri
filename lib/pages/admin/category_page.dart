@@ -116,7 +116,7 @@ class _CategoryPageState extends State<CategoryPage> {
                           'store_id': widget.storeId,
                         });
                       }
-                      if (mounted) {
+                      if (context.mounted) {
                         Navigator.pop(ctx);
                         _fetchCategories();
                       }

@@ -3,7 +3,8 @@ import 'package:supabase_flutter/supabase_flutter.dart'; // Ganti Firebase
 import 'package:intl/intl.dart';
 
 class LaporanPage extends StatelessWidget {
-  const LaporanPage({super.key});
+  final String storeId;
+  const LaporanPage({super.key, required this.storeId});
 
   @override
   Widget build(BuildContext context) {
@@ -21,7 +22,8 @@ class LaporanPage extends StatelessWidget {
         stream: supabase
             .from('transactions')
             .stream(primaryKey: ['id'])
-            .order('created_at', ascending: true),
+            .eq('store_id', storeId)
+            .order('created_at', ascending: false),
         builder: (context, snapshot) {
           if (snapshot.hasError) {
             return Center(child: Text('Error: ${snapshot.error}'));
@@ -37,17 +39,24 @@ class LaporanPage extends StatelessWidget {
 
           final transactions = snapshot.data!;
           double totalHariIni = 0;
-          DateTime now = DateTime.now();
+          final now = DateTime.now();
+          final startOfToday = DateTime(now.year, now.month, now.day);
 
           // Menghitung omzet hari ini
           for (var tx in transactions) {
-            // Parsing ISO string dari Supabase ke DateTime
-            DateTime date = DateTime.parse(tx['created_at']).toLocal();
-            if (date.day == now.day && date.month == now.month && date.year == now.year) {
-              // Pastikan total_amount di-cast ke double/num
+            final date = DateTime.parse(tx['created_at']).toLocal();
+            if (!date.isBefore(startOfToday)) {
               totalHariIni += (tx['total_amount'] as num).toDouble();
+            } else {
+              break; // Optimized: transactions are ordered descending
             }
           }
+
+          // Filter daftar untuk hanya menampilkan hari ini agar konsisten dengan header
+          final todayTransactions = transactions.where((tx) {
+            final date = DateTime.parse(tx['created_at']).toLocal();
+            return !date.isBefore(startOfToday);
+          }).toList();
 
           return Column(
             children: [
@@ -67,19 +76,23 @@ class LaporanPage extends StatelessWidget {
                         fontWeight: FontWeight.bold
                       ),
                     ),
+                    Text(
+                      "${todayTransactions.length} Transaksi Hari Ini",
+                      style: const TextStyle(color: Colors.white60, fontSize: 12),
+                    ),
                   ],
                 ),
               ),
               const Padding(
                 padding: EdgeInsets.all(12),
-                child: Text("Riwayat Transaksi", style: TextStyle(fontWeight: FontWeight.bold)),
+                child: Text("Riwayat Transaksi Hari Ini", style: TextStyle(fontWeight: FontWeight.bold)),
               ),
               // Daftar Transaksi
               Expanded(
                 child: ListView.builder(
-                  itemCount: transactions.length,
+                  itemCount: todayTransactions.length,
                   itemBuilder: (context, index) {
-                    final tx = transactions[index];
+                    final tx = todayTransactions[index];
                     DateTime date = DateTime.parse(tx['created_at']).toLocal();
                     
                     return Card(

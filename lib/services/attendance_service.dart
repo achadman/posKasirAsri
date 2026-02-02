@@ -45,7 +45,7 @@ class AttendanceService {
     if (imageFile != null) {
       final fileExt = imageFile.path.split('.').last;
       final fileName =
-          '${userId}/${DateTime.now().millisecondsSinceEpoch}.$fileExt';
+          '$userId/${DateTime.now().millisecondsSinceEpoch}.$fileExt';
 
       await _supabase.storage
           .from('attendance')

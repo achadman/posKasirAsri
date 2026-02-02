@@ -59,18 +59,15 @@ class _EmployeePageState extends State<EmployeePage> {
     if (result != null && result['email']!.isNotEmpty) {
       setState(() => _isLoading = true);
       try {
-        // Here we just create a record in a table, or manage it via profiles
-        // For this demo, we'll assume a store-link logic or just a profile update
-        // If the user already exists, we update their store_id.
-        // If not, we could create a 'pending_invites' or just tell them to register.
+        // Simple approach: Provide the User ID of the registered user
+        // and assign them to this store.
+        final userId = result['email']; // Reusing the field for ID or email
         
-        // Practical approach for this request: Create/Update profile with cashier role
-        await supabase.from('profiles').insert({
-          'full_name': result['name'],
-          'email': result['email'],
+        await supabase.from('profiles').update({
           'role': 'cashier',
           'store_id': widget.storeId,
-        });
+          if (result['name']!.isNotEmpty) 'full_name': result['name'],
+        }).or('id.eq.$userId,email.eq.$userId'); // Try matching by ID or Email if exists
 
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -151,8 +148,8 @@ class _EmployeePageState extends State<EmployeePage> {
         },
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: _addEmployee,
-        label: const Text("Tambah Karyawan"),
+        onPressed: _isLoading ? null : _addEmployee,
+        label: _isLoading ? const CircularProgressIndicator(color: Colors.white, strokeWidth: 2) : const Text("Tambah Karyawan"),
         icon: const Icon(Icons.add),
         backgroundColor: theme.colorScheme.primary,
       ),

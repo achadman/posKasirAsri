@@ -115,10 +115,10 @@ class _KasirDrawerState extends State<KasirDrawer> {
             .getPublicUrl(fileName);
 
         // Update profile
-        await supabase
-            .from('profiles')
-            .update({'avatar_url': publicUrl})
-            .eq('id', _userId!);
+        // await supabase
+        //     .from('profiles')
+        //     .update({'avatar_url': publicUrl})
+        //     .eq('id', _userId!);
 
         if (mounted) {
           setState(() {
@@ -146,7 +146,7 @@ class _KasirDrawerState extends State<KasirDrawer> {
     final isDark = ThemeController.instance.isDarkMode;
     final bgColor = isDark ? const Color(0xFF1A1C1E) : Colors.white;
     final textColor = isDark ? Colors.white : const Color(0xFF2D3436);
-    final accentColor = const Color(0xFFFF4D4D);
+    const accentColor = Color(0xFFFF4D4D);
 
     return Drawer(
       backgroundColor: bgColor,
@@ -197,7 +197,7 @@ class _KasirDrawerState extends State<KasirDrawer> {
                               color: Colors.white,
                               shape: BoxShape.circle,
                             ),
-                            child: Icon(
+                            child: const Icon(
                               CupertinoIcons.camera_fill,
                               size: 16,
                               color: accentColor,
@@ -335,7 +335,7 @@ class _KasirDrawerState extends State<KasirDrawer> {
                   const Spacer(),
                   CupertinoSwitch(
                     value: isDark,
-                    activeColor: accentColor,
+                    activeTrackColor: accentColor,
                     onChanged: (val) {
                       ThemeController.instance.toggleTheme();
                       // Force rebuild
@@ -367,7 +367,8 @@ class _KasirDrawerState extends State<KasirDrawer> {
               ),
               onTap: () async {
                 await supabase.auth.signOut();
-                if (mounted) Navigator.pushReplacementNamed(context, '/login');
+                if (!context.mounted) return;
+                Navigator.pushReplacementNamed(context, '/login');
               },
             ),
             const SizedBox(height: 16),
