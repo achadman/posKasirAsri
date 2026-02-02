@@ -12,6 +12,8 @@ import 'pages/attendance/attendance_page.dart';
 import 'controllers/theme_controller.dart';
 
 import 'pages/other/splash_page.dart';
+import 'pages/user/order_history_page.dart'; // Added
+import 'package:intl/date_symbol_data_local.dart'; // Added
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -44,7 +46,9 @@ class _RootAppState extends State<RootApp> {
           'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB5ZXNld3R0YmpxdG5paXhyaHZjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk4NTI5ODAsImV4cCI6MjA4NTQyODk4MH0.Z71ogOpR-oD_WXClMXGlf7UUHNEZ09B63_TyrDboP4c',
     );
 
-    await Future.wait([minSplashTime, supabaseInit]);
+    final localeInit = initializeDateFormatting('id', null); // Added
+
+    await Future.wait([minSplashTime, supabaseInit, localeInit]);
   }
 
   @override
@@ -159,6 +163,9 @@ class MyApp extends StatelessWidget {
                 break;
               case '/attendance':
                 page = const AttendancePage();
+                break;
+              case '/order-history': // Added
+                page = const OrderHistoryPage();
                 break;
               default:
                 return null;

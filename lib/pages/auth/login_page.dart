@@ -14,6 +14,7 @@ class _LoginPageState extends State<LoginPage> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isLoading = false;
+  bool _obscurePassword = true;
 
   Future<void> _login() async {
     if (_emailController.text.trim().isEmpty ||
@@ -120,7 +121,20 @@ class _LoginPageState extends State<LoginPage> {
                 _buildTextField(
                   controller: _passwordController,
                   hint: "Password",
-                  isObscure: true,
+                  isObscure: _obscurePassword,
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _obscurePassword
+                          ? Icons.visibility_off_outlined
+                          : Icons.visibility_outlined,
+                      color: const Color(0xFFA67C7C),
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        _obscurePassword = !_obscurePassword;
+                      });
+                    },
+                  ),
                 ),
                 const SizedBox(height: 32),
 
@@ -185,6 +199,7 @@ class _LoginPageState extends State<LoginPage> {
     required TextEditingController controller,
     required String hint,
     bool isObscure = false,
+    Widget? suffixIcon,
   }) {
     return TextField(
       controller: controller,
@@ -192,13 +207,16 @@ class _LoginPageState extends State<LoginPage> {
       style: const TextStyle(color: Colors.black87),
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle: TextStyle(color: const Color(0xFFA67C7C).withOpacity(0.7)),
+        hintStyle: TextStyle(
+          color: const Color(0xFFA67C7C).withValues(alpha: 0.7),
+        ),
         filled: true,
         fillColor: const Color(0xFFFFF0E6),
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 20,
           vertical: 16,
         ),
+        suffixIcon: suffixIcon,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide.none,

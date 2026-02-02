@@ -53,15 +53,19 @@ class ProductGrid extends StatelessWidget {
 
         var products = snapshot.data!;
 
-        // Client-side Filtering
+        // Client-side Filtering (Search)
         if (searchQuery.isNotEmpty) {
           products = products.where((p) {
             return p['name'].toString().toLowerCase().contains(searchQuery);
           }).toList();
         }
 
-        // Note: Category filtering would go here if we had category ID mapped in the UI state
-        // if (categoryFilter != null && categoryFilter != "Semua") { ... }
+        // Client-side Filtering (Category)
+        if (categoryFilter != null && categoryFilter != "Semua") {
+          products = products.where((p) {
+            return p['category_id'] == categoryFilter;
+          }).toList();
+        }
 
         if (products.isEmpty) {
           return Center(

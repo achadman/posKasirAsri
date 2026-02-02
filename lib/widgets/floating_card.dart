@@ -21,7 +21,7 @@ class FloatingCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(24), // Large radius
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04), // Neutral Soft Shadow
+            color: Colors.black.withValues(alpha: 0.04), // Neutral Soft Shadow
             blurRadius: 20,
             spreadRadius: 0,
             offset: const Offset(0, 8), // Float effect

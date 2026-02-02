@@ -1,10 +1,13 @@
 import 'dart:async';
+import 'dart:io'; // Added
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:image_picker/image_picker.dart'; // Added
 import '../../services/attendance_service.dart';
-import '../../widgets/glass_app_bar.dart';
+import 'package:flutter/cupertino.dart';
+import '../../widgets/kasir_drawer.dart';
 
 class AttendancePage extends StatefulWidget {
   const AttendancePage({super.key});
@@ -22,6 +25,7 @@ class _AttendancePageState extends State<AttendancePage> {
   bool _isLoading = true;
   Timer? _timer;
   DateTime _currentTime = DateTime.now();
+  File? _imageFile; // Added for attendance photo
 
   @override
   void initState() {
@@ -73,6 +77,17 @@ class _AttendancePageState extends State<AttendancePage> {
     }
   }
 
+  Future<void> _pickImage() async {
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(
+      source: ImageSource.camera,
+      imageQuality: 50,
+    );
+    if (pickedFile != null) {
+      setState(() => _imageFile = File(pickedFile.path));
+    }
+  }
+
   Future<void> _handleClockIn() async {
     if (_storeId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -88,12 +103,14 @@ class _AttendancePageState extends State<AttendancePage> {
       await _attendanceService.clockIn(
         supabase.auth.currentUser!.id,
         _storeId!,
+        imageFile: _imageFile,
       );
-      await _loadData(); // Refresh to update UI
+      await _loadData();
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text("Berhasil Clock In!")));
+        setState(() => _imageFile = null);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Berhasil Clock In! Selamat bekerja.")),
+        );
       }
     } catch (e) {
       if (mounted) {
@@ -106,13 +123,100 @@ class _AttendancePageState extends State<AttendancePage> {
     }
   }
 
+  Future<void> _handleMarkAbsence() async {
+    // Show a dialog for absence reason
+    final reasonController = TextEditingController();
+    await showCupertinoDialog(
+      context: context,
+      builder: (ctx) => CupertinoAlertDialog(
+        title: const Text("Keterangan Tidak Hadir"),
+        content: Padding(
+          padding: const EdgeInsets.only(top: 10),
+          child: CupertinoTextField(
+            controller: reasonController,
+            placeholder: "Alasan (Sakit / Izin / dll)",
+          ),
+        ),
+        actions: [
+          CupertinoDialogAction(
+            child: const Text("Batal"),
+            onPressed: () => Navigator.pop(ctx),
+          ),
+          CupertinoDialogAction(
+            isDestructiveAction: true,
+            child: const Text("Kirim"),
+            onPressed: () async {
+              Navigator.pop(ctx);
+              if (reasonController.text.trim().isEmpty) return;
+
+              setState(() => _isLoading = true);
+              try {
+                // We'll treat absence as a special clock-in with notes and immediate clock-out or just a note
+                // For simplicity, let's just use notes for now.
+                await _attendanceService.clockIn(
+                  supabase.auth.currentUser!.id,
+                  _storeId ?? "unknown",
+                  notes: "TIDAK HADIR: ${reasonController.text}",
+                );
+                // Immediately clock out too
+                final log = await _attendanceService.getTodayLog(
+                  supabase.auth.currentUser!.id,
+                );
+                if (log != null) {
+                  await _attendanceService.clockOut(
+                    log['id'],
+                    notes: "TIDAK HADIR: ${reasonController.text}",
+                  );
+                }
+                await _loadData();
+              } finally {
+                if (mounted) setState(() => _isLoading = false);
+              }
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _handleToggleBreak() async {
+    if (_todayLog == null) return;
+    final currentStatus = _todayLog!['status'] ?? 'working';
+    final newStatus = currentStatus == 'working' ? 'break' : 'working';
+
+    setState(() => _isLoading = true);
+    try {
+      await _attendanceService.updateStatus(_todayLog!['id'], newStatus);
+      await _loadData();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              newStatus == 'break'
+                  ? "Berhenti sementara..."
+                  : "Kembali bekerja!",
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text("Gagal update status: $e")));
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
   Future<void> _handleClockOut() async {
     if (_todayLog == null) return;
 
     setState(() => _isLoading = true);
     try {
       await _attendanceService.clockOut(_todayLog!['id']);
-      await _loadData(); // Refresh
+      await _loadData();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -143,9 +247,13 @@ class _AttendancePageState extends State<AttendancePage> {
     Color statusColor = Colors.grey;
 
     if (_todayLog != null) {
+      final status = _todayLog!['status'] ?? 'working';
       if (_todayLog!['clock_out'] != null) {
         statusText = "Selesai Bekerja";
         statusColor = Colors.green;
+      } else if (status == 'break') {
+        statusText = "Berhenti Sementara";
+        statusColor = Colors.blue;
       } else {
         statusText = "Sedang Bekerja";
         statusColor = Colors.orange;
@@ -155,7 +263,7 @@ class _AttendancePageState extends State<AttendancePage> {
     return Scaffold(
       backgroundColor: bgColor,
       extendBodyBehindAppBar: true,
-      appBar: GlassAppBar(
+      appBar: AppBar(
         title: Text(
           "Absensi Staff",
           style: GoogleFonts.poppins(
@@ -163,7 +271,17 @@ class _AttendancePageState extends State<AttendancePage> {
             fontWeight: FontWeight.w600,
           ),
         ),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        centerTitle: true,
+        leading: Builder(
+          builder: (context) => IconButton(
+            icon: Icon(CupertinoIcons.bars, color: textColor),
+            onPressed: () => Scaffold.of(context).openDrawer(),
+          ),
+        ),
       ),
+      drawer: const KasirDrawer(currentRoute: '/attendance'),
       body: _isLoading
           ? Center(child: CircularProgressIndicator(color: primaryColor))
           : Padding(
@@ -198,7 +316,7 @@ class _AttendancePageState extends State<AttendancePage> {
                       borderRadius: BorderRadius.circular(20),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
+                          color: Colors.black.withValues(alpha: 0.05),
                           blurRadius: 10,
                           offset: const Offset(0, 4),
                         ),
@@ -246,21 +364,85 @@ class _AttendancePageState extends State<AttendancePage> {
                   const SizedBox(height: 48),
 
                   // Actions
-                  if (_todayLog == null)
+                  if (_todayLog == null) ...[
+                    // Optional Photo Preview
+                    if (_imageFile != null)
+                      Container(
+                        margin: const EdgeInsets.only(bottom: 16),
+                        height: 120,
+                        width: 120,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(16),
+                          image: DecorationImage(
+                            image: FileImage(_imageFile!),
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                        child: Align(
+                          alignment: Alignment.topRight,
+                          child: GestureDetector(
+                            onTap: () => setState(() => _imageFile = null),
+                            child: const CircleAvatar(
+                              radius: 12,
+                              backgroundColor: Colors.red,
+                              child: Icon(
+                                Icons.close,
+                                size: 16,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                        ),
+                      )
+                    else
+                      TextButton.icon(
+                        onPressed: _pickImage,
+                        icon: const Icon(CupertinoIcons.camera),
+                        label: const Text("Lampirkan Foto (Opsional)"),
+                      ),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _buildActionButton(
+                            "HADIR",
+                            Colors.green,
+                            CupertinoIcons.checkmark_circle,
+                            _handleClockIn,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: _buildActionButton(
+                            "TIDAK HADIR",
+                            Colors.orange,
+                            CupertinoIcons.xmark_circle,
+                            _handleMarkAbsence,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ] else if (_todayLog!['clock_out'] == null) ...[
                     _buildActionButton(
-                      "CLOCK IN",
-                      Colors.green,
-                      Icons.login_rounded,
-                      _handleClockIn,
-                    )
-                  else if (_todayLog!['clock_out'] == null)
+                      _todayLog!['status'] == 'break'
+                          ? "MASUK KEMBALI"
+                          : "BERHENTI SEMENTARA",
+                      _todayLog!['status'] == 'break'
+                          ? Colors.blue
+                          : Colors.grey[700]!,
+                      _todayLog!['status'] == 'break'
+                          ? CupertinoIcons.play_circle
+                          : CupertinoIcons.pause_circle,
+                      _handleToggleBreak,
+                    ),
+                    const SizedBox(height: 16),
                     _buildActionButton(
                       "CLOCK OUT",
                       Colors.red,
-                      Icons.logout_rounded,
+                      CupertinoIcons.square_arrow_right,
                       _handleClockOut,
-                    )
-                  else
+                    ),
+                  ] else
                     Text(
                       "Shift hari ini telah selesai.",
                       style: GoogleFonts.inter(color: Colors.grey),

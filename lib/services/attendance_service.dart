@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class AttendanceService {
@@ -33,27 +34,56 @@ class AttendanceService {
   }
 
   /// Clock In
-  Future<void> clockIn(String userId, String storeId, {String? notes}) async {
+  Future<void> clockIn(
+    String userId,
+    String storeId, {
+    String? notes,
+    File? imageFile,
+  }) async {
+    String? photoUrl;
+
+    if (imageFile != null) {
+      final fileExt = imageFile.path.split('.').last;
+      final fileName =
+          '${userId}/${DateTime.now().millisecondsSinceEpoch}.$fileExt';
+
+      await _supabase.storage
+          .from('attendance')
+          .upload(
+            fileName,
+            imageFile,
+            fileOptions: const FileOptions(upsert: true),
+          );
+
+      photoUrl = _supabase.storage.from('attendance').getPublicUrl(fileName);
+    }
+
     await _supabase.from('attendance_logs').insert({
       'user_id': userId,
       'store_id': storeId,
       'clock_in': DateTime.now().toIso8601String(),
       'notes': notes,
+      'photo_url': photoUrl,
+      'status': 'working',
     });
+  }
+
+  /// Update attendance status (e.g., 'working', 'break', 'finished')
+  Future<void> updateStatus(String logId, String status) async {
+    await _supabase
+        .from('attendance_logs')
+        .update({'status': status})
+        .eq('id', logId);
   }
 
   /// Clock Out
   Future<void> clockOut(String logId, {String? notes}) async {
     final now = DateTime.now();
-
-    // Ideally we would calculate total hours here or let the DB trigger do it if one exists.
-    // For now, we'll just update clock_out.
-
     await _supabase
         .from('attendance_logs')
         .update({
           'clock_out': now.toIso8601String(),
-          // We could append notes if needed, but for now let's just keep original notes or update if provided
+          'status': 'finished',
           if (notes != null) 'notes': notes,
         })
         .eq('id', logId);

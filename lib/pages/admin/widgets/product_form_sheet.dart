@@ -129,10 +129,7 @@ class _ProductFormSheetState extends State<ProductFormSheet> {
       try {
         final res = await supabase
             .from('categories')
-            .insert({
-              'name': newCategory,
-              'store_id': widget.storeId,
-            })
+            .insert({'name': newCategory, 'store_id': widget.storeId})
             .select()
             .single();
 
@@ -330,7 +327,7 @@ class _ProductFormSheetState extends State<ProductFormSheet> {
                                       )
                                     : null),
                           border: Border.all(
-                            color: Colors.grey.withOpacity(0.3),
+                            color: Colors.grey.withValues(alpha: 0.3),
                           ),
                         ),
                         child: (_imageFile == null && _currentImageUrl == null)
@@ -506,7 +503,7 @@ class _ProductFormSheetState extends State<ProductFormSheet> {
               color: theme.cardColor,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
+                  color: Colors.black.withValues(alpha: 0.05),
                   blurRadius: 10,
                   offset: const Offset(0, -5),
                 ),
@@ -547,10 +544,7 @@ class _ProductFormSheetState extends State<ProductFormSheet> {
       initialValue: _selectedCategoryId,
       isExpanded: true, // Prevent text overflow
       dropdownColor: Theme.of(context).cardColor,
-      style: GoogleFonts.inter(
-        color: textColor,
-        fontWeight: FontWeight.w500,
-      ),
+      style: GoogleFonts.inter(color: textColor, fontWeight: FontWeight.w500),
       decoration: InputDecoration(
         labelText: "Kategori",
         labelStyle: GoogleFonts.inter(color: Colors.grey[500]),

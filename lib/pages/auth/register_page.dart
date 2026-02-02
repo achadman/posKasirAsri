@@ -17,17 +17,9 @@ class _RegisterPageState extends State<RegisterPage> {
   final TextEditingController _confirmPasswordController =
       TextEditingController();
 
-  // Note: For now, we are not asking for Full Name in the UI reference provided by user,
-  // but it's good practice to keep it or just assume email is enough.
-  // However, the previous implementation had it.
-  // Let's check the user image again. Image shows: Email, Password, Confirm Password. No "Full Name".
-  // I will remove Full Name to strictly follow the visual reference,
-  // or I can keep it if I assume "Buat Akun" usually needs a name.
-  // The user said: "changes the login and register to this ui". The UI provided has 3 fields.
-  // Email, Password, Confirm Password.
-  // I will stick to the UI reference.
-
   bool _isLoading = false;
+  bool _obscurePassword = true;
+  bool _obscureConfirmPassword = true;
 
   Future<void> _register() async {
     if (_emailController.text.trim().isEmpty ||
@@ -144,13 +136,39 @@ class _RegisterPageState extends State<RegisterPage> {
                 _buildTextField(
                   controller: _passwordController,
                   hint: "Password",
-                  isObscure: true,
+                  isObscure: _obscurePassword,
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _obscurePassword
+                          ? Icons.visibility_off_outlined
+                          : Icons.visibility_outlined,
+                      color: const Color(0xFFA67C7C),
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        _obscurePassword = !_obscurePassword;
+                      });
+                    },
+                  ),
                 ),
                 const SizedBox(height: 16),
                 _buildTextField(
                   controller: _confirmPasswordController,
                   hint: "Confirm Password",
-                  isObscure: true,
+                  isObscure: _obscureConfirmPassword,
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _obscureConfirmPassword
+                          ? Icons.visibility_off_outlined
+                          : Icons.visibility_outlined,
+                      color: const Color(0xFFA67C7C),
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        _obscureConfirmPassword = !_obscureConfirmPassword;
+                      });
+                    },
+                  ),
                 ),
                 const SizedBox(height: 32),
 
@@ -215,6 +233,7 @@ class _RegisterPageState extends State<RegisterPage> {
     required TextEditingController controller,
     required String hint,
     bool isObscure = false,
+    Widget? suffixIcon,
   }) {
     return TextField(
       controller: controller,
@@ -222,13 +241,16 @@ class _RegisterPageState extends State<RegisterPage> {
       style: const TextStyle(color: Colors.black87),
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle: TextStyle(color: const Color(0xFFA67C7C).withOpacity(0.7)),
+        hintStyle: TextStyle(
+          color: const Color(0xFFA67C7C).withValues(alpha: 0.7),
+        ),
         filled: true,
         fillColor: const Color(0xFFFFF0E6),
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 20,
           vertical: 16,
         ),
+        suffixIcon: suffixIcon,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide.none,
