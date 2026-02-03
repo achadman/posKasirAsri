@@ -35,7 +35,7 @@ class _KasirDrawerState extends State<KasirDrawer> {
 
     final data = await supabase
         .from('profiles')
-        .select('full_name, role')
+        .select('full_name, role, avatar_url')
         .eq('id', user.id)
         .maybeSingle();
 
@@ -100,10 +100,10 @@ class _KasirDrawerState extends State<KasirDrawer> {
         final fileExt = pickedFile.path.split('.').last;
         final fileName = '$_userId/avatar.$fileExt';
 
-        // Upload to Supabase Storage 'avatars' bucket
-        // Ensure you have created 'avatars' bucket in Supabase dashboard
+        // Upload to Supabase Storage 'profiles' bucket
+        // Ensure you have created 'profiles' bucket in Supabase dashboard
         await supabase.storage
-            .from('avatars')
+            .from('profiles')
             .upload(
               fileName,
               file,
@@ -111,14 +111,13 @@ class _KasirDrawerState extends State<KasirDrawer> {
             );
 
         final publicUrl = supabase.storage
-            .from('avatars')
+            .from('profiles')
             .getPublicUrl(fileName);
 
-        // Update profile
-        // await supabase
-        //     .from('profiles')
-        //     .update({'avatar_url': publicUrl})
-        //     .eq('id', _userId!);
+        await supabase
+            .from('profiles')
+            .update({'avatar_url': publicUrl})
+            .eq('id', _userId!);
 
         if (mounted) {
           setState(() {
@@ -174,13 +173,17 @@ class _KasirDrawerState extends State<KasirDrawer> {
                                     fit: BoxFit.cover,
                                   )
                                 : null,
-                            color: Colors.grey[200],
+                            color: isDark
+                                ? Colors.white.withValues(alpha: 0.1)
+                                : Colors.grey[200],
                           ),
                           child: _avatarUrl == null
                               ? Icon(
                                   CupertinoIcons.person_solid,
                                   size: 50,
-                                  color: Colors.grey[400],
+                                  color: isDark
+                                      ? Colors.white38
+                                      : Colors.grey[400],
                                 )
                               : null,
                         ),

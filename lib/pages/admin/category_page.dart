@@ -53,9 +53,9 @@ class _CategoryPageState extends State<CategoryPage> {
       builder: (ctx) => Padding(
         padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
         child: Container(
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
+          decoration: BoxDecoration(
+            color: Theme.of(context).cardColor,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
           ),
           padding: const EdgeInsets.all(24),
           child: Column(
@@ -84,15 +84,32 @@ class _CategoryPageState extends State<CategoryPage> {
               TextField(
                 controller: controller,
                 autofocus: true,
+                style: GoogleFonts.inter(
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? Colors.white
+                      : Colors.black87,
+                ),
                 decoration: InputDecoration(
                   hintText: "Nama Kategori (Contoh: Makanan)",
+                  hintStyle: GoogleFonts.inter(
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? Colors.white38
+                        : Colors.grey[400],
+                  ),
                   filled: true,
-                  fillColor: Colors.grey[100],
+                  fillColor: Theme.of(context).brightness == Brightness.dark
+                      ? Colors.white.withValues(alpha: 0.05)
+                      : Colors.grey[100],
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(16),
                     borderSide: BorderSide.none,
                   ),
-                  prefixIcon: const Icon(CupertinoIcons.grid),
+                  prefixIcon: Icon(
+                    CupertinoIcons.grid,
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? Colors.white70
+                        : Colors.grey,
+                  ),
                 ),
               ),
               const SizedBox(height: 20),
@@ -178,21 +195,25 @@ class _CategoryPageState extends State<CategoryPage> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FD),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: Text(
           "Manajemen Kategori",
           style: GoogleFonts.poppins(
             fontWeight: FontWeight.bold,
-            color: const Color(0xFF2D3436),
+            color: isDark ? Colors.white : const Color(0xFF2D3436),
           ),
         ),
-        backgroundColor: Colors.white,
+        backgroundColor: Colors.transparent,
         elevation: 0,
         centerTitle: true,
         leading: IconButton(
-          icon: const Icon(CupertinoIcons.back, color: Color(0xFF2D3436)),
+          icon: Icon(
+            CupertinoIcons.back,
+            color: isDark ? Colors.white : const Color(0xFF2D3436),
+          ),
           onPressed: () => Navigator.pop(context),
         ),
         actions: [
@@ -229,11 +250,13 @@ class _CategoryPageState extends State<CategoryPage> {
                 return Container(
                   margin: const EdgeInsets.only(bottom: 12),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: Theme.of(context).cardColor,
                     borderRadius: BorderRadius.circular(20),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.03),
+                        color: Colors.black.withValues(
+                          alpha: isDark ? 0.2 : 0.03,
+                        ),
                         blurRadius: 10,
                         offset: const Offset(0, 5),
                       ),
@@ -252,7 +275,7 @@ class _CategoryPageState extends State<CategoryPage> {
                       cat['name'],
                       style: GoogleFonts.poppins(
                         fontWeight: FontWeight.w600,
-                        color: const Color(0xFF2D3436),
+                        color: isDark ? Colors.white : const Color(0xFF2D3436),
                       ),
                     ),
                     trailing: Row(

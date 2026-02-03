@@ -65,10 +65,22 @@ class _RootAppState extends State<RootApp> {
           theme: ThemeData(
             colorScheme: ColorScheme.fromSeed(
               seedColor: const Color(0xFFFF4D4D),
+              brightness: Brightness.light,
             ),
             useMaterial3: true,
             scaffoldBackgroundColor: const Color(0xFFF8F9FD),
+            cardColor: Colors.white,
             textTheme: GoogleFonts.poppinsTextTheme(),
+            appBarTheme: AppBarTheme(
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+              iconTheme: const IconThemeData(color: Color(0xFF2D3436)),
+              titleTextStyle: GoogleFonts.poppins(
+                color: const Color(0xFF2D3436),
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
             pageTransitionsTheme: const PageTransitionsTheme(
               builders: {
                 TargetPlatform.android: CupertinoPageTransitionsBuilder(),
@@ -76,15 +88,26 @@ class _RootAppState extends State<RootApp> {
               },
             ),
           ),
-          darkTheme: ThemeData.dark().copyWith(
+          darkTheme: ThemeData(
             colorScheme: ColorScheme.fromSeed(
               seedColor: const Color(0xFFFF4D4D),
               brightness: Brightness.dark,
               primary: const Color(0xFFFF4D4D),
             ),
-            scaffoldBackgroundColor: const Color(0xFF1A1C1E),
-            cardColor: const Color(0xFF2D3436),
+            useMaterial3: true,
+            scaffoldBackgroundColor: const Color(0xFF121212), // Deep black
+            cardColor: const Color(0xFF1E1E1E), // Slightly lighter surface
             textTheme: GoogleFonts.poppinsTextTheme(ThemeData.dark().textTheme),
+            appBarTheme: AppBarTheme(
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+              iconTheme: const IconThemeData(color: Colors.white),
+              titleTextStyle: GoogleFonts.poppins(
+                color: Colors.white,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
             pageTransitionsTheme: const PageTransitionsTheme(
               builders: {
                 TargetPlatform.android: CupertinoPageTransitionsBuilder(),

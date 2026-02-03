@@ -4,7 +4,7 @@ class OrderService {
   final SupabaseClient _supabase = Supabase.instance.client;
 
   /// Create a new transaction and its items, then update product stock
-  Future<void> createOrder({
+  Future<String> createOrder({
     required String storeId,
     required String userId,
     required double totalAmount,
@@ -24,7 +24,7 @@ class OrderService {
         .select()
         .single();
 
-    final txId = txResponse['id'];
+    final txId = txResponse['id'] as String;
 
     // 2. Insert transaction items
     final List<Map<String, dynamic>> itemsToInsert = items.map((item) {
@@ -33,6 +33,8 @@ class OrderService {
         'product_id': item['product_id'],
         'quantity': item['quantity'],
         'price_at_time': item['unit_price'],
+        'notes': item['notes'],
+        'selected_options': item['selected_options'] ?? [],
       };
     }).toList();
 
@@ -57,6 +59,8 @@ class OrderService {
           .update({'stock_quantity': currentStock - qty})
           .eq('id', pId);
     }
+
+    return txId;
   }
 
   /// Get transactions for today for a specific store

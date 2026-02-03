@@ -38,6 +38,10 @@ class _ProductFormSheetState extends State<ProductFormSheet> {
   String? _selectedCategoryId;
   List<Map<String, dynamic>> _categories = [];
 
+  // Variant & Options Logic
+  bool _enableVariants = false;
+  List<Map<String, dynamic>> _productOptions = [];
+
   final Color _primaryColor = const Color(0xFFFF4D4D); // Vibrant Red
 
   @override
@@ -56,6 +60,28 @@ class _ProductFormSheetState extends State<ProductFormSheet> {
       _isStockManaged = widget.product!['is_stock_managed'] ?? true;
       _currentImageUrl = widget.product!['image_url'];
       _selectedCategoryId = widget.product!['category_id'];
+      _fetchOptions();
+    }
+  }
+
+  Future<void> _fetchOptions() async {
+    if (widget.product == null) return;
+    try {
+      final options = await supabase
+          .from('product_options')
+          .select('*, product_option_values(*)')
+          .eq('product_id', widget.product!['id']);
+
+      if (mounted) {
+        setState(() {
+          _productOptions = List<Map<String, dynamic>>.from(options);
+          if (_productOptions.isNotEmpty) {
+            _enableVariants = true;
+          }
+        });
+      }
+    } catch (e) {
+      debugPrint("Error fetching options: $e");
     }
   }
 
@@ -79,6 +105,41 @@ class _ProductFormSheetState extends State<ProductFormSheet> {
     } catch (e) {
       debugPrint("Error loading categories: $e");
     }
+  }
+
+  void _addOption() {
+    setState(() {
+      _productOptions.add({
+        'option_name': '',
+        'is_required': false,
+        'product_option_values': [],
+      });
+      _enableVariants = true;
+    });
+  }
+
+  void _removeOption(int index) {
+    setState(() {
+      _productOptions.removeAt(index);
+      if (_productOptions.isEmpty) _enableVariants = false;
+    });
+  }
+
+  void _addValue(int optionIndex) {
+    setState(() {
+      _productOptions[optionIndex]['product_option_values'].add({
+        'value_name': '',
+        'price_adjustment': 0.0,
+      });
+    });
+  }
+
+  void _removeValue(int optionIndex, int valueIndex) {
+    setState(() {
+      _productOptions[optionIndex]['product_option_values'].removeAt(
+        valueIndex,
+      );
+    });
   }
 
   Future<void> _showAddCategoryDialog() async {
@@ -176,14 +237,36 @@ class _ProductFormSheetState extends State<ProductFormSheet> {
       final filePath = 'products/$fileName';
 
       await supabase.storage
-          .from('products')
+          .from('product')
           .upload(
             filePath,
             _imageFile!,
             fileOptions: const FileOptions(upsert: true),
           );
 
-      final imageUrl = supabase.storage.from('products').getPublicUrl(filePath);
+      // If there was a previous image, delete it to keep storage clean
+      if (_currentImageUrl != null) {
+        try {
+          final uri = Uri.parse(_currentImageUrl!);
+          final pathSegments = uri.pathSegments;
+          // Format usually: /storage/v1/object/public/product/products/filename.ext
+          // or similar depending on Supabase version/config.
+          // We need the path inside the bucket.
+          final bucketIndex = pathSegments.indexOf('product');
+          if (bucketIndex != -1 && bucketIndex + 1 < pathSegments.length) {
+            final fullPathInsideBucket = pathSegments
+                .sublist(bucketIndex + 1)
+                .join('/');
+            await supabase.storage.from('product').remove([
+              fullPathInsideBucket,
+            ]);
+          }
+        } catch (e) {
+          debugPrint("Cleanup old image error: $e");
+        }
+      }
+
+      final imageUrl = supabase.storage.from('product').getPublicUrl(filePath);
       return imageUrl;
     } catch (e) {
       debugPrint("Upload Error: $e");
@@ -220,22 +303,85 @@ class _ProductFormSheetState extends State<ProductFormSheet> {
         'image_url': imageUrl,
       };
 
+      final productId;
       if (widget.product == null) {
         // ADD NEW
-        await supabase.from('products').insert(data);
+        final res = await supabase
+            .from('products')
+            .insert(data)
+            .select()
+            .single();
+        productId = res['id'];
       } else {
         // UPDATE EXISTING
+        productId = widget.product!['id'];
+        await supabase.from('products').update(data).eq('id', productId);
+      }
+
+      // Sync Variants & Options
+      if (_enableVariants) {
+        // Delete old options for a clean state
         await supabase
-            .from('products')
-            .update(data)
-            .eq('id', widget.product!['id']);
+            .from('product_options')
+            .delete()
+            .eq('product_id', productId);
+
+        for (var opt in _productOptions) {
+          final optName = opt['option_name'].toString().trim();
+          if (optName.isEmpty) continue;
+
+          // Insert option
+          final optRes = await supabase
+              .from('product_options')
+              .insert({
+                'product_id': productId,
+                'store_id': widget.storeId,
+                'option_name': optName,
+                'is_required': opt['is_required'] ?? false,
+              })
+              .select()
+              .single();
+
+          final optId = optRes['id'];
+
+          // Bulk insert values
+          final values = List<Map<String, dynamic>>.from(
+            opt['product_option_values'] ?? [],
+          );
+          final List<Map<String, dynamic>> valuesToInsert = [];
+
+          for (var val in values) {
+            final valName = val['value_name'].toString().trim();
+            if (valName.isEmpty) continue;
+
+            valuesToInsert.add({
+              'option_id': optId,
+              'value_name': valName,
+              'price_adjustment': val['price_adjustment'] ?? 0,
+            });
+          }
+
+          if (valuesToInsert.isNotEmpty) {
+            await supabase.from('product_option_values').insert(valuesToInsert);
+          }
+        }
+      } else if (widget.product != null) {
+        // If variants disabled, ensured they are cleared
+        await supabase
+            .from('product_options')
+            .delete()
+            .eq('product_id', productId);
       }
 
       if (mounted) Navigator.pop(context, true); // Return true on success
     } catch (e) {
+      debugPrint("Save Product Error: $e");
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Error: $e"), backgroundColor: Colors.red),
+          SnackBar(
+            content: Text("Gagal simpan: $e"),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     } finally {
@@ -425,6 +571,86 @@ class _ProductFormSheetState extends State<ProductFormSheet> {
                     ],
                   ),
                   const SizedBox(height: 20),
+
+                  // Variants & Options Section
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: inputFill,
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(Icons.tune_rounded, color: _primaryColor),
+                                const SizedBox(width: 12),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      "Varian & Opsi",
+                                      style: GoogleFonts.poppins(
+                                        fontWeight: FontWeight.w600,
+                                        color: textColor,
+                                      ),
+                                    ),
+                                    Text(
+                                      "Contoh: Level Pedas, Topping, dll.",
+                                      style: GoogleFonts.inter(
+                                        fontSize: 12,
+                                        color: Colors.grey[500],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                            Switch(
+                              value: _enableVariants,
+                              activeThumbColor: _primaryColor,
+                              onChanged: (val) {
+                                setState(() {
+                                  _enableVariants = val;
+                                  if (val && _productOptions.isEmpty) {
+                                    _addOption();
+                                  }
+                                });
+                              },
+                            ),
+                          ],
+                        ),
+                        if (_enableVariants) ...[
+                          const SizedBox(height: 16),
+                          ...List.generate(_productOptions.length, (optIdx) {
+                            final opt = _productOptions[optIdx];
+                            return _buildOptionItem(
+                              opt,
+                              optIdx,
+                              textColor,
+                              isDark,
+                            );
+                          }),
+                          const SizedBox(height: 10),
+                          Center(
+                            child: TextButton.icon(
+                              onPressed: _addOption,
+                              icon: const Icon(Icons.add_circle_outline),
+                              label: const Text("Tambah Grup Opsi"),
+                              style: TextButton.styleFrom(
+                                foregroundColor: _primaryColor,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
 
                   // Stock Management Switch
                   Container(
@@ -627,6 +853,152 @@ class _ProductFormSheetState extends State<ProductFormSheet> {
           borderSide: BorderSide(color: Colors.red[300]!, width: 1),
         ),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+      ),
+    );
+  }
+
+  Widget _buildOptionItem(
+    Map<String, dynamic> opt,
+    int idx,
+    Color textColor,
+    bool isDark,
+  ) {
+    final values = List<Map<String, dynamic>>.from(
+      opt['product_option_values'] ?? [],
+    );
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: isDark ? Colors.grey[900] : Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey.withValues(alpha: 0.1)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: TextFormField(
+                  initialValue: opt['option_name'],
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: textColor,
+                  ),
+                  decoration: InputDecoration(
+                    hintText: "Nama Grup Opsi (Misal: Pilih Kematangan)",
+                    isDense: true,
+                    border: InputBorder.none,
+                    hintStyle: GoogleFonts.inter(
+                      color: Colors.grey,
+                      fontSize: 13,
+                    ),
+                  ),
+                  onChanged: (val) => opt['option_name'] = val,
+                ),
+              ),
+              IconButton(
+                icon: const Icon(
+                  Icons.delete_outline,
+                  color: Colors.red,
+                  size: 20,
+                ),
+                onPressed: () => _removeOption(idx),
+              ),
+            ],
+          ),
+          const Divider(),
+          Row(
+            children: [
+              Text(
+                "Wajib dipilih?",
+                style: GoogleFonts.inter(fontSize: 12, color: Colors.grey[600]),
+              ),
+              const Spacer(),
+              Switch(
+                value: opt['is_required'] ?? false,
+                onChanged: (val) => setState(() => opt['is_required'] = val),
+                activeColor: _primaryColor,
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            "Pilihan Opsi:",
+            style: GoogleFonts.inter(
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+              color: Colors.grey[700],
+            ),
+          ),
+          const SizedBox(height: 8),
+          ...List.generate(values.length, (valIdx) {
+            final val = values[valIdx];
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Row(
+                children: [
+                  Expanded(
+                    flex: 3,
+                    child: TextFormField(
+                      initialValue: val['value_name'],
+                      style: GoogleFonts.inter(fontSize: 13, color: textColor),
+                      decoration: InputDecoration(
+                        hintText: "Nama Opsi",
+                        isDense: true,
+                        filled: true,
+                        fillColor: isDark ? Colors.grey[800] : Colors.grey[100],
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide.none,
+                        ),
+                      ),
+                      onChanged: (v) => val['value_name'] = v,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    flex: 2,
+                    child: TextFormField(
+                      initialValue: (val['price_adjustment'] ?? 0).toString(),
+                      keyboardType: TextInputType.number,
+                      style: GoogleFonts.inter(fontSize: 13, color: textColor),
+                      decoration: InputDecoration(
+                        hintText: "Harga +/-",
+                        isDense: true,
+                        filled: true,
+                        fillColor: isDark ? Colors.grey[800] : Colors.grey[100],
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide.none,
+                        ),
+                      ),
+                      onChanged: (v) =>
+                          val['price_adjustment'] = double.tryParse(v) ?? 0.0,
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(
+                      Icons.remove_circle_outline,
+                      color: Colors.grey,
+                      size: 18,
+                    ),
+                    onPressed: () => _removeValue(idx, valIdx),
+                  ),
+                ],
+              ),
+            );
+          }),
+          TextButton.icon(
+            onPressed: () => _addValue(idx),
+            icon: const Icon(Icons.add, size: 16),
+            label: const Text("Tambah Pilihan", style: TextStyle(fontSize: 12)),
+            style: TextButton.styleFrom(foregroundColor: _primaryColor),
+          ),
+        ],
       ),
     );
   }

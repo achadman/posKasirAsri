@@ -214,7 +214,7 @@ class _LoginPageState extends State<LoginPage> {
         fillColor: const Color(0xFFFFF0E6),
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 20,
-          vertical: 16,
+          vertical: 20,
         ),
         suffixIcon: suffixIcon,
         border: OutlineInputBorder(

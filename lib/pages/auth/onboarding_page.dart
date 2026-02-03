@@ -73,9 +73,13 @@ class OnboardingPage extends StatelessWidget {
                       width: double.infinity,
                       height: 55,
                       child: ElevatedButton(
+
                         onPressed: () =>
                             Navigator.pushReplacementNamed(context, '/login'),
                         style: ElevatedButton.styleFrom(
+                          side: const BorderSide(
+                            color: Colors.white,
+                          ),
                           backgroundColor: const Color(0xFFEA5700),
                           foregroundColor: Colors.white,
                           shape: RoundedRectangleBorder(
@@ -94,7 +98,6 @@ class OnboardingPage extends StatelessWidget {
                               ),
                             ),
                             SizedBox(width: 10),
-                            Icon(Icons.arrow_forward),
                           ],
                         ),
                       ),

@@ -36,7 +36,7 @@ class AdminController extends ChangeNotifier {
 
       final profile = await supabase
           .from('profiles')
-          .select('store_id, full_name, role')
+          .select('store_id, full_name, role, avatar_url')
           .eq('id', user.id)
           .maybeSingle();
 
@@ -44,6 +44,7 @@ class AdminController extends ChangeNotifier {
         _storeId = profile['store_id'];
         _userName = profile['full_name'] ?? user.email?.split('@')[0] ?? 'User';
         _role = profile['role'];
+        _profileUrl = profile['avatar_url'];
       }
 
       if (_storeId != null) {
@@ -100,7 +101,7 @@ class AdminController extends ChangeNotifier {
           .order('stock_quantity', ascending: true);
 
       final newLowStockItems = List<Map<String, dynamic>>.from(products);
-      
+
       // Update values and notify
       bool changed = false;
       if (_todaySales != total) {

@@ -9,6 +9,8 @@ import 'laporan_page.dart';
 import 'category_page.dart';
 import 'inventory_page.dart';
 import 'profile_page.dart';
+import 'employee_page.dart';
+import 'history/history_page.dart';
 
 import 'package:provider/provider.dart';
 import '../../controllers/admin_controller.dart';
@@ -69,9 +71,7 @@ class _AdminPageState extends State<AdminPage> {
         builder: (context, controller, child) {
           if (controller.isInitializing) {
             return const Scaffold(
-              body: Center(
-                child: CupertinoActivityIndicator(radius: 15),
-              ),
+              body: Center(child: CupertinoActivityIndicator(radius: 15)),
             );
           }
 
@@ -80,7 +80,7 @@ class _AdminPageState extends State<AdminPage> {
           }
 
           return Scaffold(
-            backgroundColor: const Color(0xFFF8F9FD),
+            backgroundColor: Theme.of(context).scaffoldBackgroundColor,
             drawer: AdminDrawer(
               userName: controller.userName,
               profileUrl: controller.profileUrl,
@@ -113,6 +113,18 @@ class _AdminPageState extends State<AdminPage> {
                 context,
                 MaterialPageRoute(builder: (_) => const KasirPage()),
               ),
+              onEmployeeTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => EmployeePage(storeId: controller.storeId!),
+                ),
+              ),
+              onHistoryTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => HistoryPage(storeId: controller.storeId!),
+                ),
+              ),
               role: controller.role,
               onLogoutTap: () async {
                 await supabase.auth.signOut();
@@ -130,8 +142,8 @@ class _AdminPageState extends State<AdminPage> {
                 child: Column(
                   children: [
                     AdminHeader(
-                      userName: controller.userName,
-                      profileUrl: controller.profileUrl,
+                      userName: controller.storeName,
+                      profileUrl: controller.storeLogo,
                       storeName: controller.storeName,
                       todaySales: controller.todaySales,
                       transactionCount: controller.transactionCount,
@@ -149,20 +161,22 @@ class _AdminPageState extends State<AdminPage> {
                         controller.loadInitialData();
                       },
                       onLowStockTap: () => _showLowStockAlert(controller),
-                      onSalesTap: (controller.role == 'owner' ||
+                      onSalesTap:
+                          (controller.role == 'owner' ||
                               controller.role == 'admin')
                           ? () => Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) =>
-                                      LaporanPage(storeId: controller.storeId!),
-                                ),
-                              )
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) =>
+                                    LaporanPage(storeId: controller.storeId!),
+                              ),
+                            )
                           : () {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
                                   content: Text(
-                                      "Akses Dibatasi: Hanya Owner yang dapat melihat laporan detail."),
+                                    "Akses Dibatasi: Hanya Owner yang dapat melihat laporan detail.",
+                                  ),
                                   backgroundColor: Colors.orange,
                                 ),
                               );
@@ -238,7 +252,14 @@ class _AdminPageState extends State<AdminPage> {
                                   label: "Riwayat",
                                   icon: CupertinoIcons.doc_text,
                                   color: Colors.purple,
-                                  onTap: () {},
+                                  onTap: () => Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => HistoryPage(
+                                        storeId: controller.storeId!,
+                                      ),
+                                    ),
+                                  ),
                                 ),
                                 AdminMenuItem(
                                   label: "Printer",
@@ -246,9 +267,23 @@ class _AdminPageState extends State<AdminPage> {
                                   color: Colors.blueGrey,
                                   onTap: () {},
                                 ),
+                                AdminMenuItem(
+                                  label: "Karyawan",
+                                  icon: CupertinoIcons.person_2,
+                                  color: Colors.cyan,
+                                  onTap: () => Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => HistoryPage(
+                                        storeId: controller.storeId!,
+                                      ),
+                                    ),
+                                  ),
+                                ),
                               ],
                             ),
                           ),
+                          const SizedBox(height: 20),
                           if (controller.role == 'owner' ||
                               controller.role == 'admin')
                             _buildAnimatedSection(
@@ -271,7 +306,8 @@ class _AdminPageState extends State<AdminPage> {
                                       context,
                                       MaterialPageRoute(
                                         builder: (_) => LaporanPage(
-                                            storeId: controller.storeId!),
+                                          storeId: controller.storeId!,
+                                        ),
                                       ),
                                     ),
                                   ),
@@ -299,78 +335,88 @@ class _AdminPageState extends State<AdminPage> {
   }
 
   Widget _buildNoStoreView(AdminController controller) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Padding(
         padding: const EdgeInsets.all(40),
         child: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(
-              CupertinoIcons.house_alt_fill,
-              size: 100,
-              color: Color(0xFFEA5700),
-            ),
-            const SizedBox(height: 24),
-            Text(
-              "Toko Belum Terdaftar",
-              style: GoogleFonts.poppins(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
+            children: [
+              const Icon(
+                CupertinoIcons.house_alt_fill,
+                size: 100,
+                color: Color(0xFFEA5700),
               ),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              "Akun Anda terdeteksi belum memiliki toko. Silakan buat toko baru untuk mulai mengelola bisnis Anda.",
-              textAlign: TextAlign.center,
-              style: GoogleFonts.inter(color: Colors.grey[600]),
-            ),
-            const SizedBox(height: 40),
-            SizedBox(
-              width: double.infinity,
-              height: 56,
-              child: ElevatedButton(
-                onPressed: () => _showCreateStoreDialog(controller),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFEA5700),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
+              const SizedBox(height: 24),
+              Text(
+                "Toko Belum Terdaftar",
+                style: GoogleFonts.poppins(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: isDark ? Colors.white : const Color(0xFF2D3436),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                "Akun Anda terdeteksi belum memiliki toko. Silakan buat toko baru untuk mulai mengelola bisnis Anda.",
+                textAlign: TextAlign.center,
+                style: GoogleFonts.inter(
+                  color: isDark ? Colors.white70 : Colors.grey[600],
+                ),
+              ),
+              const SizedBox(height: 40),
+              SizedBox(
+                width: double.infinity,
+                height: 56,
+                child: ElevatedButton(
+                  onPressed: () => _showCreateStoreDialog(controller),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFEA5700),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
+                  child: Text(
+                    "Buat Toko Sekarang",
+                    style: GoogleFonts.poppins(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
                   ),
                 ),
+              ),
+              const SizedBox(height: 16),
+              TextButton(
+                onPressed: () async {
+                  await supabase.auth.signOut();
+                  if (mounted)
+                    Navigator.pushReplacementNamed(context, '/login');
+                },
                 child: Text(
-                  "Buat Toko Sekarang",
-                  style: GoogleFonts.poppins(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
+                  "Keluar Akun",
+                  style: GoogleFonts.inter(color: Colors.grey),
                 ),
               ),
-            ),
-            const SizedBox(height: 16),
-            TextButton(
-              onPressed: () async {
-                await supabase.auth.signOut();
-                if (mounted) Navigator.pushReplacementNamed(context, '/login');
-              },
-              child: Text(
-                "Keluar Akun",
-                style: GoogleFonts.inter(color: Colors.grey),
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
-    ),);
+    );
   }
 
   Future<void> _showCreateStoreDialog(AdminController controller) async {
     final nameController = TextEditingController();
-    
+
     final result = await showDialog<String>(
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text("Buka Toko Baru", style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
+        title: Text(
+          "Buka Toko Baru",
+          style: GoogleFonts.poppins(fontWeight: FontWeight.bold),
+        ),
         content: TextField(
           controller: nameController,
           autofocus: true,
@@ -380,7 +426,10 @@ class _AdminPageState extends State<AdminPage> {
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text("Batal")),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Batal"),
+          ),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, nameController.text.trim()),
             child: const Text("Buat Toko"),
@@ -391,19 +440,25 @@ class _AdminPageState extends State<AdminPage> {
 
     if (result != null && result.isNotEmpty) {
       try {
-        final storeRes = await supabase.from('stores').insert({
-          'name': result,
-        }).select().single();
+        final storeRes = await supabase
+            .from('stores')
+            .insert({'name': result})
+            .select()
+            .single();
 
-        await supabase.from('profiles').update({
-          'store_id': storeRes['id'],
-        }).eq('id', supabase.auth.currentUser!.id);
+        await supabase
+            .from('profiles')
+            .update({'store_id': storeRes['id']})
+            .eq('id', supabase.auth.currentUser!.id);
 
         controller.loadInitialData();
-        
+
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("Toko berhasil dibuat!"), backgroundColor: Colors.green),
+            const SnackBar(
+              content: Text("Toko berhasil dibuat!"),
+              backgroundColor: Colors.green,
+            ),
           );
         }
       } catch (e) {

@@ -13,6 +13,8 @@ class AdminDrawer extends StatelessWidget {
   final VoidCallback onInventoryTap;
   final VoidCallback onCategoryTap;
   final VoidCallback onKasirTap;
+  final VoidCallback onEmployeeTap;
+  final VoidCallback onHistoryTap;
   final VoidCallback onLogoutTap;
 
   const AdminDrawer({
@@ -27,13 +29,15 @@ class AdminDrawer extends StatelessWidget {
     required this.onInventoryTap,
     required this.onCategoryTap,
     required this.onKasirTap,
+    required this.onEmployeeTap,
+    required this.onHistoryTap,
     required this.onLogoutTap,
   });
 
   @override
   Widget build(BuildContext context) {
     return Drawer(
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.horizontal(right: Radius.circular(32)),
       ),
@@ -46,6 +50,7 @@ class AdminDrawer extends StatelessWidget {
               children: [
                 _buildDrawerSectionTitle("UTAMA"),
                 _buildDrawerItem(
+                  context: context,
                   icon: CupertinoIcons.square_grid_2x2,
                   label: "Dashboard",
                   onTap: () => Navigator.pop(context),
@@ -53,6 +58,7 @@ class AdminDrawer extends StatelessWidget {
                 ),
                 _buildDrawerSectionTitle("OPERASIONAL"),
                 _buildDrawerItem(
+                  context: context,
                   icon: CupertinoIcons.cube_box,
                   label: "Inventori Barang",
                   onTap: () {
@@ -61,6 +67,7 @@ class AdminDrawer extends StatelessWidget {
                   },
                 ),
                 _buildDrawerItem(
+                  context: context,
                   icon: CupertinoIcons.grid,
                   label: "Manajemen Kategori",
                   onTap: () {
@@ -69,11 +76,13 @@ class AdminDrawer extends StatelessWidget {
                   },
                 ),
                 _buildDrawerItem(
+                  context: context,
                   icon: CupertinoIcons.bag,
                   label: "Data Pembelian",
                   onTap: () {},
                 ),
                 _buildDrawerItem(
+                  context: context,
                   icon: CupertinoIcons.cart,
                   label: "Kasir (POS)",
                   onTap: () {
@@ -82,13 +91,27 @@ class AdminDrawer extends StatelessWidget {
                   },
                 ),
                 _buildDrawerItem(
+                  context: context,
+                  icon: CupertinoIcons.person_2,
+                  label: "Manajemen Karyawan",
+                  onTap: () {
+                    Navigator.pop(context);
+                    onEmployeeTap();
+                  },
+                ),
+                _buildDrawerItem(
+                  context: context,
                   icon: CupertinoIcons.doc_text,
                   label: "Riwayat Transaksi",
-                  onTap: () {},
+                  onTap: () {
+                    Navigator.pop(context);
+                    onHistoryTap();
+                  },
                 ),
                 if (role == 'owner' || role == 'admin') ...[
                   _buildDrawerSectionTitle("LAINNYA"),
                   _buildDrawerItem(
+                    context: context,
                     icon: CupertinoIcons.graph_square,
                     label: "Laporan Analitik",
                     onTap: () {},
@@ -100,6 +123,7 @@ class AdminDrawer extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.all(20),
             child: _buildDrawerItem(
+              context: context,
               icon: CupertinoIcons.power,
               label: "Keluar Sesi",
               color: Colors.red,
@@ -125,42 +149,18 @@ class AdminDrawer extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Stack(
-            children: [
-              CircleAvatar(
-                radius: 35,
-                backgroundColor: Colors.white,
-                backgroundImage: profileUrl != null
-                    ? NetworkImage(profileUrl!)
-                    : null,
-                child: profileUrl == null
-                    ? const Icon(Icons.person, size: 40, color: Colors.grey)
-                    : null,
-              ),
-              if (storeLogo != null)
-                Positioned(
-                  right: 0,
-                  bottom: 0,
-                  child: Container(
-                    padding: const EdgeInsets.all(2),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.1),
-                          blurRadius: 4,
-                        ),
-                      ],
-                    ),
-                    child: CircleAvatar(
-                      radius: 12,
-                      backgroundColor: Colors.white,
-                      backgroundImage: NetworkImage(storeLogo!),
-                    ),
-                  ),
-                ),
-            ],
+          GestureDetector(
+            onTap: onProfileTap,
+            child: CircleAvatar(
+              radius: 35,
+              backgroundColor: Colors.white,
+              backgroundImage: profileUrl != null
+                  ? NetworkImage(profileUrl!)
+                  : null,
+              child: profileUrl == null
+                  ? const Icon(Icons.person, size: 40, color: Colors.grey)
+                  : null,
+            ),
           ),
           const SizedBox(height: 15),
           GestureDetector(
@@ -211,23 +211,29 @@ class AdminDrawer extends StatelessWidget {
   }
 
   Widget _buildDrawerItem({
+    required BuildContext context,
     required IconData icon,
     required String label,
     required VoidCallback onTap,
     Color? color,
     bool isActive = false,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return ListTile(
       leading: Icon(
         icon,
-        color: isActive ? primaryColor : (color ?? Colors.grey[700]),
+        color: isActive
+            ? primaryColor
+            : (color ?? (isDark ? Colors.white70 : Colors.grey[700])),
       ),
       title: Text(
         label,
         style: GoogleFonts.inter(
           fontSize: 15,
           fontWeight: isActive ? FontWeight.bold : FontWeight.w500,
-          color: isActive ? primaryColor : (color ?? Colors.grey[800]),
+          color: isActive
+              ? primaryColor
+              : (color ?? (isDark ? Colors.white : Colors.grey[800])),
         ),
       ),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),

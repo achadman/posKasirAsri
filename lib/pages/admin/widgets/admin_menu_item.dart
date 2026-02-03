@@ -32,11 +32,15 @@ class AdminMenuSection extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
+            color: Colors.black.withValues(
+              alpha: Theme.of(context).brightness == Brightness.dark
+                  ? 0.2
+                  : 0.03,
+            ),
             blurRadius: 10,
             offset: const Offset(0, 5),
           ),
@@ -53,7 +57,9 @@ class AdminMenuSection extends StatelessWidget {
                   style: GoogleFonts.poppins(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
-                    color: const Color(0xFF2D3436),
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? Colors.white
+                        : const Color(0xFF2D3436),
                   ),
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -87,7 +93,9 @@ class AdminMenuSection extends StatelessWidget {
                         style: GoogleFonts.inter(
                           fontSize: 12,
                           fontWeight: FontWeight.w500,
-                          color: const Color(0xFF636E72),
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? Colors.white70
+                              : const Color(0xFF636E72),
                         ),
                         overflow: TextOverflow.ellipsis,
                         maxLines: 1,

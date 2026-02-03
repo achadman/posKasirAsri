@@ -57,7 +57,11 @@ class AdminHeader extends StatelessWidget {
                       ? NetworkImage(profileUrl!)
                       : null,
                   child: profileUrl == null
-                      ? const Icon(Icons.person, size: 30, color: Colors.grey)
+                      ? const Icon(
+                          Icons.storefront_rounded,
+                          size: 30,
+                          color: Colors.grey,
+                        )
                       : null,
                 ),
               ),
@@ -75,7 +79,7 @@ class AdminHeader extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      "Owner (Premium)",
+                      "Business Account",
                       style: GoogleFonts.inter(
                         fontSize: 14,
                         color: Colors.white.withValues(alpha: 0.8),

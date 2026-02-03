@@ -49,16 +49,23 @@ class _OrderHistoryPageState extends State<OrderHistoryPage> {
 
   @override
   Widget build(BuildContext context) {
-
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: Text(
           "Riwayat Pesanan",
-          style: GoogleFonts.poppins(fontWeight: FontWeight.bold),
+          style: GoogleFonts.poppins(
+            fontWeight: FontWeight.bold,
+            color: isDark ? Colors.white : const Color(0xFF2D3436),
+          ),
         ),
         backgroundColor: Colors.transparent,
         elevation: 0,
         centerTitle: true,
+        iconTheme: IconThemeData(
+          color: isDark ? Colors.white : const Color(0xFF2D3436),
+        ),
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -80,12 +87,14 @@ class _OrderHistoryPageState extends State<OrderHistoryPage> {
                         Icon(
                           Icons.history_rounded,
                           size: 80,
-                          color: Colors.grey[300],
+                          color: isDark ? Colors.white10 : Colors.grey[300],
                         ),
                         const SizedBox(height: 16),
                         Text(
                           "Belum ada pesanan hari ini.",
-                          style: GoogleFonts.inter(color: Colors.grey),
+                          style: GoogleFonts.inter(
+                            color: isDark ? Colors.white38 : Colors.grey,
+                          ),
                         ),
                       ],
                     ),
@@ -100,12 +109,24 @@ class _OrderHistoryPageState extends State<OrderHistoryPage> {
                     final items = order['transaction_items'] as List;
                     final date = DateTime.parse(order['created_at']).toLocal();
 
-                    return Card(
+                    return Container(
                       margin: const EdgeInsets.only(bottom: 12),
-                      shape: RoundedRectangleBorder(
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).cardColor,
                         borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(
+                              alpha: isDark ? 0.2 : 0.03,
+                            ),
+                            blurRadius: 10,
+                            offset: const Offset(0, 5),
+                          ),
+                        ],
                       ),
                       child: ExpansionTile(
+                        shape: const Border(), // Remove default borders
+                        collapsedShape: const Border(),
                         leading: Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
@@ -121,11 +142,17 @@ class _OrderHistoryPageState extends State<OrderHistoryPage> {
                           _currencyFormat.format(order['total_amount']),
                           style: GoogleFonts.poppins(
                             fontWeight: FontWeight.bold,
+                            color: isDark
+                                ? Colors.white
+                                : const Color(0xFF2D3436),
                           ),
                         ),
                         subtitle: Text(
                           DateFormat('HH:mm').format(date),
-                          style: GoogleFonts.inter(fontSize: 12),
+                          style: GoogleFonts.inter(
+                            fontSize: 12,
+                            color: isDark ? Colors.white60 : Colors.grey[600],
+                          ),
                         ),
                         children: [
                           const Divider(),
@@ -136,12 +163,26 @@ class _OrderHistoryPageState extends State<OrderHistoryPage> {
                             final price = item['price_at_time'] ?? 0;
                             return ListTile(
                               dense: true,
-                              title: Text(productName),
+                              title: Text(
+                                productName,
+                                style: GoogleFonts.inter(
+                                  color: isDark ? Colors.white : Colors.black87,
+                                ),
+                              ),
                               subtitle: Text(
                                 "${qty}x ${_currencyFormat.format(price)}",
+                                style: GoogleFonts.inter(
+                                  color: isDark
+                                      ? Colors.white60
+                                      : Colors.grey[600],
+                                ),
                               ),
                               trailing: Text(
                                 _currencyFormat.format(qty * price),
+                                style: GoogleFonts.inter(
+                                  fontWeight: FontWeight.bold,
+                                  color: isDark ? Colors.white : Colors.black87,
+                                ),
                               ),
                             );
                           }),

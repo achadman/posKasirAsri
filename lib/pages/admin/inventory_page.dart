@@ -185,7 +185,32 @@ class _InventoryPageState extends State<InventoryPage> {
 
     if (confirm == true) {
       try {
+        // Fetch product to get image_url before deletion
+        final product = _products.firstWhere((p) => p['id'] == id);
+        final imageUrl = product['image_url'];
+
+        // Delete from Database
         await supabase.from('products').delete().eq('id', id);
+
+        // Delete from Storage if exists
+        if (imageUrl != null) {
+          try {
+            final uri = Uri.parse(imageUrl);
+            final pathSegments = uri.pathSegments;
+            final bucketIndex = pathSegments.indexOf('product');
+            if (bucketIndex != -1 && bucketIndex + 1 < pathSegments.length) {
+              final fullPathInsideBucket = pathSegments
+                  .sublist(bucketIndex + 1)
+                  .join('/');
+              await supabase.storage.from('product').remove([
+                fullPathInsideBucket,
+              ]);
+            }
+          } catch (e) {
+            debugPrint("Storage cleanup error: $e");
+          }
+        }
+
         _fetchProducts();
       } catch (e) {
         debugPrint("Error deleting product: $e");
@@ -200,21 +225,25 @@ class _InventoryPageState extends State<InventoryPage> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FD),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: Text(
           "Inventori Barang",
           style: GoogleFonts.poppins(
             fontWeight: FontWeight.bold,
-            color: const Color(0xFF2D3436),
+            color: isDark ? Colors.white : const Color(0xFF2D3436),
           ),
         ),
-        backgroundColor: Colors.white,
+        backgroundColor: Colors.transparent,
         elevation: 0,
         centerTitle: true,
         leading: IconButton(
-          icon: const Icon(CupertinoIcons.back, color: Color(0xFF2D3436)),
+          icon: Icon(
+            CupertinoIcons.back,
+            color: isDark ? Colors.white : const Color(0xFF2D3436),
+          ),
           onPressed: () => Navigator.pop(context),
         ),
         actions: [
@@ -245,11 +274,11 @@ class _InventoryPageState extends State<InventoryPage> {
             padding: const EdgeInsets.all(20),
             child: Container(
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: Theme.of(context).cardColor,
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.03),
+                    color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.03),
                     blurRadius: 10,
                     offset: const Offset(0, 5),
                   ),
@@ -257,16 +286,19 @@ class _InventoryPageState extends State<InventoryPage> {
               ),
               child: TextField(
                 controller: _searchController,
+                style: GoogleFonts.inter(
+                  color: isDark ? Colors.white : Colors.black87,
+                ),
                 decoration: InputDecoration(
                   hintText: "Cari nama barang atau SKU...",
                   hintStyle: GoogleFonts.inter(
-                    color: Colors.grey[400],
+                    color: isDark ? Colors.white38 : Colors.grey[400],
                     fontSize: 14,
                   ),
-                  prefixIcon: const Icon(
+                  prefixIcon: Icon(
                     CupertinoIcons.search,
                     size: 20,
-                    color: Colors.grey,
+                    color: isDark ? Colors.white38 : Colors.grey,
                   ),
                   border: InputBorder.none,
                   contentPadding: const EdgeInsets.symmetric(vertical: 15),
@@ -343,11 +375,15 @@ class _InventoryPageState extends State<InventoryPage> {
       child: Container(
         margin: const EdgeInsets.only(bottom: 12),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.03),
+              color: Colors.black.withValues(
+                alpha: Theme.of(context).brightness == Brightness.dark
+                    ? 0.2
+                    : 0.03,
+              ),
               blurRadius: 10,
               offset: const Offset(0, 5),
             ),
@@ -389,7 +425,9 @@ class _InventoryPageState extends State<InventoryPage> {
                         style: GoogleFonts.poppins(
                           fontWeight: FontWeight.bold,
                           fontSize: 15,
-                          color: const Color(0xFF2D3436),
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? Colors.white
+                              : const Color(0xFF2D3436),
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,

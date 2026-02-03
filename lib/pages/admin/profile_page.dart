@@ -37,7 +37,7 @@ class _ProfilePageState extends State<ProfilePage> {
     try {
       final profile = await supabase
           .from('profiles')
-          .select('full_name')
+          .select('full_name, avatar_url')
           .eq('id', user.id)
           .maybeSingle();
 
@@ -84,22 +84,40 @@ class _ProfilePageState extends State<ProfilePage> {
           '${user!.id}/avatar_${DateTime.now().millisecondsSinceEpoch}.$fileExt';
       final filePath = fileName;
 
-      // Use 'avatars' bucket consistently
+      // Use 'profiles' bucket consistently
       await supabase.storage
-          .from('avatars')
+          .from('profiles')
           .upload(
             filePath,
             File(image.path),
             fileOptions: const FileOptions(upsert: true),
           );
 
-      final url = supabase.storage.from('avatars').getPublicUrl(filePath);
+      final url = supabase.storage.from('profiles').getPublicUrl(filePath);
 
-      // Note: avatar_url removed because column does not exist in profiles table
-      // await supabase
-      //     .from('profiles')
-      //     .update({'avatar_url': url})
-      //     .eq('id', user.id);
+      // Cleanup old avatar if exists
+      if (_avatarUrl != null) {
+        try {
+          final uri = Uri.parse(_avatarUrl!);
+          final pathSegments = uri.pathSegments;
+          final bucketIndex = pathSegments.indexOf('profiles');
+          if (bucketIndex != -1 && bucketIndex + 1 < pathSegments.length) {
+            final fullPathInsideBucket = pathSegments
+                .sublist(bucketIndex + 1)
+                .join('/');
+            await supabase.storage.from('profiles').remove([
+              fullPathInsideBucket,
+            ]);
+          }
+        } catch (e) {
+          debugPrint("Cleanup old avatar error: $e");
+        }
+      }
+
+      await supabase
+          .from('profiles')
+          .update({'avatar_url': url})
+          .eq('id', user.id);
 
       setState(() => _avatarUrl = url);
 
@@ -207,15 +225,34 @@ class _ProfilePageState extends State<ProfilePage> {
 
       await supabase.storage
           .from(
-            'avatars',
-          ) // Using avatars bucket for all branding images for now
+            'profiles',
+          ) // Using profiles bucket for all branding images for now
           .upload(
             fileName,
             File(image.path),
             fileOptions: const FileOptions(upsert: true),
           );
 
-      final url = supabase.storage.from('avatars').getPublicUrl(fileName);
+      final url = supabase.storage.from('profiles').getPublicUrl(fileName);
+
+      // Cleanup old store logo if exists
+      if (_storeLogo != null) {
+        try {
+          final uri = Uri.parse(_storeLogo!);
+          final pathSegments = uri.pathSegments;
+          final bucketIndex = pathSegments.indexOf('profiles');
+          if (bucketIndex != -1 && bucketIndex + 1 < pathSegments.length) {
+            final fullPathInsideBucket = pathSegments
+                .sublist(bucketIndex + 1)
+                .join('/');
+            await supabase.storage.from('profiles').remove([
+              fullPathInsideBucket,
+            ]);
+          }
+        } catch (e) {
+          debugPrint("Cleanup old logo error: $e");
+        }
+      }
 
       await supabase
           .from('stores')
@@ -308,16 +345,25 @@ class _ProfilePageState extends State<ProfilePage> {
   Widget build(BuildContext context) {
     final user = supabase.auth.currentUser;
 
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FD),
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         title: Text(
           "Profil Saya",
-          style: GoogleFonts.poppins(fontWeight: FontWeight.bold),
+          style: GoogleFonts.poppins(
+            fontWeight: FontWeight.bold,
+            color: isDark ? Colors.white : const Color(0xFF2D3436),
+          ),
         ),
         centerTitle: true,
         backgroundColor: Colors.transparent,
         elevation: 0,
+        iconTheme: IconThemeData(
+          color: isDark ? Colors.white : const Color(0xFF2D3436),
+        ),
       ),
       body: Column(
         children: [
@@ -327,89 +373,92 @@ class _ProfilePageState extends State<ProfilePage> {
               child: Column(
                 children: [
                   const SizedBox(height: 20),
-            _buildProfileHeader(user),
-            const SizedBox(height: 30),
-            _buildSectionTitle("PENGATURAN AKUN"),
-            _buildMenuSection([
-              _ProfileMenuItem(
-                label: "Edit Nama Admin",
-                icon: CupertinoIcons.person,
-                onTap: _editName,
-              ),
-              _ProfileMenuItem(
-                label: "Ganti Foto Admin",
-                icon: CupertinoIcons.camera,
-                onTap: _updateAvatar,
-              ),
-              _ProfileMenuItem(
-                label: "Daftar Karyawan",
-                icon: CupertinoIcons.person_3,
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => EmployeePage(storeId: widget.storeId),
-                  ),
-                ),
-              ),
-            ]),
-            const SizedBox(height: 30),
-            _buildSectionTitle("BRANDING TOKO"),
-            _buildMenuSection([
-              _ProfileMenuItem(
-                label: "Ubah Nama Toko",
-                icon: CupertinoIcons.tag,
-                onTap: _editStoreName,
-              ),
-              _ProfileMenuItem(
-                label: "Ubah Logo Toko",
-                icon: CupertinoIcons.photo,
-                onTap: _updateStoreLogo,
-                trailing: _storeLogo != null
-                    ? Container(
-                        width: 32,
-                        height: 32,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(6),
-                          image: DecorationImage(
-                            image: NetworkImage(_storeLogo!),
-                            fit: BoxFit.cover,
+                  _buildProfileHeader(user),
+                  const SizedBox(height: 30),
+                  _buildSectionTitle("PENGATURAN AKUN"),
+                  _buildMenuSection([
+                    _ProfileMenuItem(
+                      label: "Edit Nama Admin",
+                      icon: CupertinoIcons.person,
+                      onTap: _editName,
+                    ),
+                    _ProfileMenuItem(
+                      label: "Ganti Foto Admin",
+                      icon: CupertinoIcons.camera,
+                      onTap: _updateAvatar,
+                    ),
+                    _ProfileMenuItem(
+                      label: "Daftar Karyawan",
+                      icon: CupertinoIcons.person_3,
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => EmployeePage(storeId: widget.storeId),
+                        ),
+                      ),
+                    ),
+                  ]),
+                  const SizedBox(height: 30),
+                  _buildSectionTitle("BRANDING TOKO"),
+                  _buildMenuSection([
+                    _ProfileMenuItem(
+                      label: "Ubah Nama Toko",
+                      icon: CupertinoIcons.tag,
+                      onTap: _editStoreName,
+                    ),
+                    _ProfileMenuItem(
+                      label: "Ubah Logo Toko",
+                      icon: CupertinoIcons.photo,
+                      onTap: _updateStoreLogo,
+                      trailing: _storeLogo != null
+                          ? Container(
+                              width: 32,
+                              height: 32,
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(6),
+                                image: DecorationImage(
+                                  image: NetworkImage(_storeLogo!),
+                                  fit: BoxFit.cover,
+                                ),
+                              ),
+                            )
+                          : null,
+                    ),
+                  ]),
+                  const SizedBox(height: 20),
+                  _buildThemeToggle(),
+                  const SizedBox(height: 30),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: SizedBox(
+                      width: double.infinity,
+                      height: 55,
+                      child: OutlinedButton.icon(
+                        onPressed: () async {
+                          await supabase.auth.signOut();
+                          if (!context.mounted) return;
+                          Navigator.pushReplacementNamed(context, '/login');
+                        },
+                        icon: const Icon(
+                          CupertinoIcons.power,
+                          color: Colors.red,
+                        ),
+                        label: Text(
+                          "Keluar Sesi",
+                          style: GoogleFonts.poppins(
+                            color: Colors.red,
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
-                      )
-                    : null,
-              ),
-            ]),
-            const SizedBox(height: 20),
-            _buildThemeToggle(),
-            const SizedBox(height: 30),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: SizedBox(
-                width: double.infinity,
-                height: 55,
-                child: OutlinedButton.icon(
-                  onPressed: () async {
-                    await supabase.auth.signOut();
-                    if (!context.mounted) return;
-                    Navigator.pushReplacementNamed(context, '/login');
-                  },
-                  icon: const Icon(CupertinoIcons.power, color: Colors.red),
-                  label: Text(
-                    "Keluar Sesi",
-                    style: GoogleFonts.poppins(
-                      color: Colors.red,
-                      fontWeight: FontWeight.bold,
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(color: Colors.red, width: 1.5),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                        ),
+                      ),
                     ),
                   ),
-                  style: OutlinedButton.styleFrom(
-                    side: const BorderSide(color: Colors.red, width: 1.5),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                  ),
-                ),
-              ),
-            ),
                 ],
               ),
             ),
@@ -469,7 +518,9 @@ class _ProfilePageState extends State<ProfilePage> {
           style: GoogleFonts.poppins(
             fontSize: 24,
             fontWeight: FontWeight.bold,
-            color: const Color(0xFF2D3436),
+            color: Theme.of(context).brightness == Brightness.dark
+                ? Colors.white
+                : const Color(0xFF2D3436),
           ),
         ),
         Text(
@@ -500,11 +551,15 @@ class _ProfilePageState extends State<ProfilePage> {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 24),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
+            color: Colors.black.withValues(
+              alpha: Theme.of(context).brightness == Brightness.dark
+                  ? 0.2
+                  : 0.03,
+            ),
             blurRadius: 10,
             offset: const Offset(0, 5),
           ),
@@ -533,7 +588,9 @@ class _ProfilePageState extends State<ProfilePage> {
                   item.label,
                   style: GoogleFonts.inter(
                     fontWeight: FontWeight.w600,
-                    color: const Color(0xFF2D3436),
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? Colors.white
+                        : const Color(0xFF2D3436),
                   ),
                 ),
                 trailing:
@@ -559,11 +616,15 @@ class _ProfilePageState extends State<ProfilePage> {
       margin: const EdgeInsets.symmetric(horizontal: 24),
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 5),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
+            color: Colors.black.withValues(
+              alpha: Theme.of(context).brightness == Brightness.dark
+                  ? 0.2
+                  : 0.03,
+            ),
             blurRadius: 10,
             offset: const Offset(0, 5),
           ),
@@ -593,7 +654,7 @@ class _ProfilePageState extends State<ProfilePage> {
               "Mode Gelap",
               style: GoogleFonts.inter(
                 fontWeight: FontWeight.w600,
-                color: const Color(0xFF2D3436),
+                color: isDark ? Colors.white : const Color(0xFF2D3436),
               ),
             ),
             value: isDark,
