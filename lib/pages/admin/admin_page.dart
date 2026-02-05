@@ -11,6 +11,7 @@ import 'inventory_page.dart';
 import 'profile_page.dart';
 import 'employee_page.dart';
 import 'history/history_page.dart';
+import '../other/printer_settings_page.dart';
 
 import 'package:provider/provider.dart';
 import '../../controllers/admin_controller.dart';
@@ -123,6 +124,12 @@ class _AdminPageState extends State<AdminPage> {
                 context,
                 MaterialPageRoute(
                   builder: (_) => HistoryPage(storeId: controller.storeId!),
+                ),
+              ),
+              onPrinterTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const PrinterSettingsPage(),
                 ),
               ),
               role: controller.role,
@@ -265,7 +272,12 @@ class _AdminPageState extends State<AdminPage> {
                                   label: "Printer",
                                   icon: CupertinoIcons.printer,
                                   color: Colors.blueGrey,
-                                  onTap: () {},
+                                  onTap: () => Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => const PrinterSettingsPage(),
+                                    ),
+                                  ),
                                 ),
                                 AdminMenuItem(
                                   label: "Karyawan",

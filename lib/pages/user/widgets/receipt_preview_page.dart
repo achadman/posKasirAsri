@@ -3,15 +3,34 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:printing/printing.dart';
 import 'package:pdf/pdf.dart';
+import '../../../services/bluetooth_printer_service.dart';
 
 class ReceiptPreviewPage extends StatelessWidget {
   final Uint8List pdfData;
   final String fileName;
 
+  // Added for Bluetooth Printing
+  final String? storeName;
+  final String? transactionId;
+  final DateTime? createdAt;
+  final List<Map<String, dynamic>>? items;
+  final double? totalAmount;
+  final double? cashReceived;
+  final double? change;
+  final String? paymentMethod;
+
   const ReceiptPreviewPage({
     super.key,
     required this.pdfData,
     required this.fileName,
+    this.storeName,
+    this.transactionId,
+    this.createdAt,
+    this.items,
+    this.totalAmount,
+    this.cashReceived,
+    this.change,
+    this.paymentMethod,
   });
 
   @override
@@ -32,18 +51,34 @@ class ReceiptPreviewPage extends StatelessWidget {
           // Placeholder for Print UI
           IconButton(
             icon: const Icon(Icons.print_rounded),
-            onPressed: () {
-              // Just a placeholder for now
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text(
-                    "Fitur Cetak segera hadir! Silakan gunakan tombol Share/Download.",
+            onPressed: () async {
+              final printerService = BluetoothPrinterService();
+              if (printerService.isConnected) {
+                await printerService.printReceipt(
+                  storeName: storeName ?? "Toko Kasir Asri",
+                  transactionId: transactionId ?? "TXN",
+                  createdAt: createdAt ?? DateTime.now(),
+                  items: items ?? [],
+                  totalAmount: totalAmount ?? 0,
+                  cashReceived: cashReceived ?? 0,
+                  change: change ?? 0,
+                  paymentMethod: paymentMethod ?? "Tunai",
+                );
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text("Mencetak struk...")),
+                  );
+                }
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text("Printer Bluetooth belum terhubung!"),
+                    behavior: SnackBarBehavior.floating,
                   ),
-                  behavior: SnackBarBehavior.floating,
-                ),
-              );
+                );
+              }
             },
-            tooltip: "Cetak (Coming Soon)",
+            tooltip: "Cetak ke Printer Bluetooth",
           ),
         ],
       ),
