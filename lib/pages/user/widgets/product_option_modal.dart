@@ -16,7 +16,7 @@ class _ProductOptionModalState extends State<ProductOptionModal> {
   final supabase = Supabase.instance.client;
   bool _isLoading = true;
   List<Map<String, dynamic>> _options = [];
-  Map<String, String> _selectedValues = {}; // OptionID -> ValueID
+  final Map<String, String> _selectedValues = {}; // OptionID -> ValueID
   final _notesController = TextEditingController();
 
   final _currencyFormat = NumberFormat.currency(
@@ -119,7 +119,7 @@ class _ProductOptionModalState extends State<ProductOptionModal> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final primaryColor = const Color(0xFFFF4D4D);
+    const primaryColor = Color(0xFFFF4D4D);
 
     return Container(
       height: MediaQuery.of(context).size.height * 0.85,
@@ -183,7 +183,7 @@ class _ProductOptionModalState extends State<ProductOptionModal> {
                     children: [
                       ..._options
                           .map((opt) => _buildOptionSection(opt, isDark))
-                          .toList(),
+                          ,
 
                       const SizedBox(height: 16),
                       Text(

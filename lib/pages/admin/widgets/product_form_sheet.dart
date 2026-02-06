@@ -237,7 +237,7 @@ class _ProductFormSheetState extends State<ProductFormSheet> {
       final filePath = 'products/$fileName';
 
       await supabase.storage
-          .from('product')
+          .from('products')
           .upload(
             filePath,
             _imageFile!,
@@ -249,15 +249,15 @@ class _ProductFormSheetState extends State<ProductFormSheet> {
         try {
           final uri = Uri.parse(_currentImageUrl!);
           final pathSegments = uri.pathSegments;
-          // Format usually: /storage/v1/object/public/product/products/filename.ext
+          // Format usually: /storage/v1/object/public/products/products/filename.ext
           // or similar depending on Supabase version/config.
           // We need the path inside the bucket.
-          final bucketIndex = pathSegments.indexOf('product');
+          final bucketIndex = pathSegments.indexOf('products');
           if (bucketIndex != -1 && bucketIndex + 1 < pathSegments.length) {
             final fullPathInsideBucket = pathSegments
                 .sublist(bucketIndex + 1)
                 .join('/');
-            await supabase.storage.from('product').remove([
+            await supabase.storage.from('products').remove([
               fullPathInsideBucket,
             ]);
           }
@@ -266,7 +266,7 @@ class _ProductFormSheetState extends State<ProductFormSheet> {
         }
       }
 
-      final imageUrl = supabase.storage.from('product').getPublicUrl(filePath);
+      final imageUrl = supabase.storage.from('products').getPublicUrl(filePath);
       return imageUrl;
     } catch (e) {
       debugPrint("Upload Error: $e");
@@ -921,7 +921,7 @@ class _ProductFormSheetState extends State<ProductFormSheet> {
               Switch(
                 value: opt['is_required'] ?? false,
                 onChanged: (val) => setState(() => opt['is_required'] = val),
-                activeColor: _primaryColor,
+                activeThumbColor: _primaryColor,
               ),
             ],
           ),

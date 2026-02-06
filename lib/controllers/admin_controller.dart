@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../services/report_service.dart';
 
 class AdminController extends ChangeNotifier {
   final supabase = Supabase.instance.client;
 
+  String? _userId;
   String? _storeId;
   String? _userName;
   String? _profileUrl;
@@ -17,6 +19,7 @@ class AdminController extends ChangeNotifier {
   int _transactionCount = 0;
 
   // Getters
+  String? get userId => _userId;
   String? get storeId => _storeId;
   String? get userName => _userName;
   String? get profileUrl => _profileUrl;
@@ -41,10 +44,24 @@ class AdminController extends ChangeNotifier {
           .maybeSingle();
 
       if (profile != null) {
+        _userId = user.id;
         _storeId = profile['store_id'];
         _userName = profile['full_name'] ?? user.email?.split('@')[0] ?? 'User';
         _role = profile['role'];
         _profileUrl = profile['avatar_url'];
+
+        debugPrint(
+          "AdminController: Profile loaded. userId: $_userId, storeId: $_storeId, role: $_role",
+        );
+
+        // DEBUG: List all stores to check for mismatches
+        final allStores = await supabase.from('stores').select('id, name');
+        debugPrint("AdminController: ALL STORES in DB: ${allStores.length}");
+        for (var s in allStores) {
+          debugPrint("  - Store: ${s['name']} (ID: ${s['id']})");
+        }
+      } else {
+        debugPrint("AdminController: Profile NOT FOUND for userId: ${user.id}");
       }
 
       if (_storeId != null) {
@@ -61,6 +78,9 @@ class AdminController extends ChangeNotifier {
           _storeName = store['name'];
           _storeLogo = store['logo_url'];
         }
+
+        // Auto-cleanup old transactions (older than 30 days)
+        await ReportService().cleanupOldTransactions(_storeId!);
       }
 
       _isInitializing = false;
@@ -78,17 +98,49 @@ class AdminController extends ChangeNotifier {
     try {
       final now = DateTime.now();
       final startOfToday = DateTime(now.year, now.month, now.day);
+      final utcStartOfToday = startOfToday.toUtc();
+
+      debugPrint("AdminController: Fetching dashboard for storeId: $_storeId");
+      debugPrint("AdminController: Local startOfToday: $startOfToday");
+      debugPrint(
+        "AdminController: UTC startOfToday: ${utcStartOfToday.toIso8601String()}",
+      );
 
       // Fetch Today's Sales
       final txs = await supabase
           .from('transactions')
           .select('total_amount')
           .eq('store_id', _storeId!)
-          .gte('created_at', startOfToday.toUtc().toIso8601String());
+          .gte('created_at', utcStartOfToday.toIso8601String());
+
+      debugPrint(
+        "AdminController: Fetched ${txs.length} transactions for today.",
+      );
 
       double total = 0;
       for (var tx in txs) {
         total += (tx['total_amount'] as num).toDouble();
+      }
+
+      // DEBUG: Fetch total count ever for this store
+      final allTxs = await supabase
+          .from('transactions')
+          .select('id')
+          .eq('store_id', _storeId!);
+      debugPrint(
+        "AdminController: TOTAL transactions ever for this store ID ($_storeId): ${allTxs.length}",
+      );
+
+      // NEW DEBUG: Fetch 5 arbitrary transactions and log their store_ids to see what's in the DB
+      final sampleTxs = await supabase
+          .from('transactions')
+          .select('id, store_id, created_at')
+          .limit(5);
+      debugPrint("AdminController: DB SAMPLE (Size: ${sampleTxs.length}):");
+      for (var tx in sampleTxs) {
+        debugPrint(
+          "  - ID: ${tx['id']}, STORE: ${tx['store_id']}, CREATED: ${tx['created_at']}",
+        );
       }
 
       // Fetch Low Stock Details

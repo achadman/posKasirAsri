@@ -9,11 +9,13 @@ import 'pages/auth/onboarding_page.dart';
 import 'pages/auth/register_page.dart';
 import 'pages/attendance/attendance_page.dart';
 
-import 'controllers/theme_controller.dart';
-
 import 'pages/other/splash_page.dart';
-import 'pages/user/order_history_page.dart'; // Added
-import 'package:intl/date_symbol_data_local.dart'; // Added
+import 'pages/admin/history/history_page.dart';
+import 'controllers/theme_controller.dart';
+import 'controllers/admin_controller.dart';
+import 'controllers/analytics_controller.dart';
+import 'package:provider/provider.dart';
+import 'package:intl/date_symbol_data_local.dart';
 
 final supabase = Supabase.instance.client;
 
@@ -58,122 +60,140 @@ class _RootAppState extends State<RootApp> {
     return ValueListenableBuilder<ThemeMode>(
       valueListenable: ThemeController.instance.themeMode,
       builder: (context, currentMode, child) {
-        return MaterialApp(
-          debugShowCheckedModeBanner: false,
-          title: 'SteakAsriApp',
-          themeMode: currentMode,
-          theme: ThemeData(
-            colorScheme: ColorScheme.fromSeed(
-              seedColor: const Color(0xFFFF4D4D),
-              brightness: Brightness.light,
-            ),
-            useMaterial3: true,
-            scaffoldBackgroundColor: const Color(0xFFF8F9FD),
-            cardColor: Colors.white,
-            textTheme: GoogleFonts.poppinsTextTheme(),
-            appBarTheme: AppBarTheme(
-              backgroundColor: Colors.transparent,
-              elevation: 0,
-              iconTheme: const IconThemeData(color: Color(0xFF2D3436)),
-              titleTextStyle: GoogleFonts.poppins(
-                color: const Color(0xFF2D3436),
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
+        return MultiProvider(
+          providers: [
+            ChangeNotifierProvider(create: (_) => AdminController()),
+            ChangeNotifierProvider(create: (_) => AnalyticsController()),
+          ],
+          child: MaterialApp(
+            debugShowCheckedModeBanner: false,
+            title: 'SteakAsriApp',
+            themeMode: currentMode,
+            theme: ThemeData(
+              colorScheme: ColorScheme.fromSeed(
+                seedColor: const Color(0xFFFF4D4D),
+                brightness: Brightness.light,
               ),
-            ),
-            pageTransitionsTheme: const PageTransitionsTheme(
-              builders: {
-                TargetPlatform.android: CupertinoPageTransitionsBuilder(),
-                TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
-              },
-            ),
-          ),
-          darkTheme: ThemeData(
-            colorScheme: ColorScheme.fromSeed(
-              seedColor: const Color(0xFFFF4D4D),
-              brightness: Brightness.dark,
-              primary: const Color(0xFFFF4D4D),
-            ),
-            useMaterial3: true,
-            scaffoldBackgroundColor: const Color(0xFF121212), // Deep black
-            cardColor: const Color(0xFF1E1E1E), // Slightly lighter surface
-            textTheme: GoogleFonts.poppinsTextTheme(ThemeData.dark().textTheme),
-            appBarTheme: AppBarTheme(
-              backgroundColor: Colors.transparent,
-              elevation: 0,
-              iconTheme: const IconThemeData(color: Colors.white),
-              titleTextStyle: GoogleFonts.poppins(
-                color: Colors.white,
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
+              useMaterial3: true,
+              scaffoldBackgroundColor: const Color(0xFFF8F9FD),
+              cardColor: Colors.white,
+              textTheme: GoogleFonts.poppinsTextTheme(),
+              appBarTheme: AppBarTheme(
+                backgroundColor: Colors.transparent,
+                elevation: 0,
+                iconTheme: const IconThemeData(color: Color(0xFF2D3436)),
+                titleTextStyle: GoogleFonts.poppins(
+                  color: const Color(0xFF2D3436),
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
-            ),
-            pageTransitionsTheme: const PageTransitionsTheme(
-              builders: {
-                TargetPlatform.android: CupertinoPageTransitionsBuilder(),
-                TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
-              },
-            ),
-          ),
-          home: FutureBuilder(
-            future: _initFuture,
-            builder: (context, snapshot) {
-              if (snapshot.connectionState != ConnectionState.done) {
-                return const SplashPage();
-              }
-              // JIKA INITIALIZATION SELESAI, CEK AUTH
-              return StreamBuilder<AuthState>(
-                stream: Supabase.instance.client.auth.onAuthStateChange,
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Scaffold(
-                      body: Center(child: CircularProgressIndicator()),
-                    );
-                  }
-
-                  if (snapshot.data?.session != null) {
-                    return const AuthGate();
-                  }
-
-                  return const OnboardingPage();
+              pageTransitionsTheme: const PageTransitionsTheme(
+                builders: {
+                  TargetPlatform.android: CupertinoPageTransitionsBuilder(),
+                  TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
                 },
-              );
+              ),
+            ),
+            darkTheme: ThemeData(
+              colorScheme: ColorScheme.fromSeed(
+                seedColor: const Color(0xFFFF4D4D),
+                brightness: Brightness.dark,
+                primary: const Color(0xFFFF4D4D),
+              ),
+              useMaterial3: true,
+              scaffoldBackgroundColor: const Color(0xFF121212), // Deep black
+              cardColor: const Color(0xFF1E1E1E), // Slightly lighter surface
+              textTheme: GoogleFonts.poppinsTextTheme(
+                ThemeData.dark().textTheme,
+              ),
+              appBarTheme: AppBarTheme(
+                backgroundColor: Colors.transparent,
+                elevation: 0,
+                iconTheme: const IconThemeData(color: Colors.white),
+                titleTextStyle: GoogleFonts.poppins(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              pageTransitionsTheme: const PageTransitionsTheme(
+                builders: {
+                  TargetPlatform.android: CupertinoPageTransitionsBuilder(),
+                  TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+                },
+              ),
+            ),
+            home: FutureBuilder(
+              future: _initFuture,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState != ConnectionState.done) {
+                  return const SplashPage();
+                }
+                // JIKA INITIALIZATION SELESAI, CEK AUTH
+                return StreamBuilder<AuthState>(
+                  stream: Supabase.instance.client.auth.onAuthStateChange,
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Scaffold(
+                        body: Center(child: CircularProgressIndicator()),
+                      );
+                    }
+
+                    if (snapshot.data?.session != null) {
+                      return const AuthGate();
+                    }
+
+                    return const OnboardingPage();
+                  },
+                );
+              },
+            ),
+
+            onGenerateRoute: (settings) {
+              Widget page;
+              switch (settings.name) {
+                case '/onboarding':
+                  page = const OnboardingPage();
+                  break;
+                case '/register':
+                  page = const RegisterPage();
+                  break;
+                case '/login':
+                  page = const LoginPage();
+                  break;
+                case '/admin':
+                  page = const AdminPage();
+                  break;
+                case '/kasir':
+                  page = const KasirPage();
+                  break;
+                case '/laporan':
+                  final args = settings.arguments as Map<String, dynamic>?;
+                  page = LaporanPage(storeId: args?['storeId'] ?? '');
+                  break;
+                case '/attendance':
+                  page = const AttendancePage();
+                  break;
+                case '/order-history':
+                  final user = Supabase.instance.client.auth.currentUser;
+                  if (user == null) {
+                    page = const LoginPage();
+                  } else {
+                    // We need storeId. Since onGenerateRoute is sync,
+                    // and we don't have storeId easily here without a future,
+                    // it's safer to use a placeholder or have HistoryPage fetch its own storeId if it's null.
+                    // However, we already have HistoryPage requiring storeId.
+                    // For now, I'll update HistoryPage to accept optional storeId and fetch if null.
+                    page = const HistoryPage(storeId: null);
+                  }
+                  break;
+                default:
+                  return null;
+              }
+              return CustomPageRoute(builder: (_) => page, settings: settings);
             },
           ),
-
-          onGenerateRoute: (settings) {
-            Widget page;
-            switch (settings.name) {
-              case '/onboarding':
-                page = const OnboardingPage();
-                break;
-              case '/register':
-                page = const RegisterPage();
-                break;
-              case '/login':
-                page = const LoginPage();
-                break;
-              case '/admin':
-                page = const AdminPage();
-                break;
-              case '/kasir':
-                page = const KasirPage();
-                break;
-              case '/laporan':
-                final args = settings.arguments as Map<String, dynamic>?;
-                page = LaporanPage(storeId: args?['storeId'] ?? '');
-                break;
-              case '/attendance':
-                page = const AttendancePage();
-                break;
-              case '/order-history': // Added
-                page = const OrderHistoryPage();
-                break;
-              default:
-                return null;
-            }
-            return CustomPageRoute(builder: (_) => page, settings: settings);
-          },
         );
       },
     );

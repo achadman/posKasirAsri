@@ -2,7 +2,6 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:printing/printing.dart';
-import 'package:pdf/pdf.dart';
 
 class ReceiptPreviewPage extends StatelessWidget {
   final Uint8List pdfData;

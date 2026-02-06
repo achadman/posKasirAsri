@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:image_picker/image_picker.dart';
 import '../controllers/theme_controller.dart';
+import '../pages/admin/history/history_page.dart';
 
 class KasirDrawer extends StatefulWidget {
   final String currentRoute;
@@ -19,6 +20,7 @@ class _KasirDrawerState extends State<KasirDrawer> {
   String? _avatarUrl;
   String _fullName = "Kasir";
   String? _userId;
+  String? _storeId;
   String? _role;
   bool _isLoading = false;
 
@@ -35,16 +37,16 @@ class _KasirDrawerState extends State<KasirDrawer> {
 
     final data = await supabase
         .from('profiles')
-        .select('full_name, role, avatar_url')
+        .select('full_name, role, avatar_url, store_id')
         .eq('id', user.id)
         .maybeSingle();
 
     if (mounted && data != null) {
       setState(() {
         _fullName = data['full_name'] ?? "Kasir";
-        _avatarUrl =
-            data['avatar_url']; // Though we removed it from select, it's still in the state variable, I'll keep it as nullable
+        _avatarUrl = data['avatar_url'];
         _role = data['role'];
+        _storeId = data['store_id'];
       });
     }
   }
@@ -295,8 +297,13 @@ class _KasirDrawerState extends State<KasirDrawer> {
               isSelected: widget.currentRoute == '/order-history',
               onTap: () {
                 Navigator.pop(context);
-                if (widget.currentRoute != '/order-history') {
-                  Navigator.pushNamed(context, '/order-history');
+                if (_storeId != null) {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => HistoryPage(storeId: _storeId!),
+                    ),
+                  );
                 }
               },
               textColor: textColor,

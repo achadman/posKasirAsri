@@ -28,10 +28,13 @@ class _InventoryPageState extends State<InventoryPage> {
     decimalDigits: 0,
   );
 
+  List<Map<String, dynamic>> _categories = [];
+  String? _selectedCategoryId; // null means "All"
+
   @override
   void initState() {
     super.initState();
-    _fetchProducts();
+    _fetchData();
     _searchController.addListener(_filterProducts);
   }
 
@@ -41,12 +44,20 @@ class _InventoryPageState extends State<InventoryPage> {
     super.dispose();
   }
 
-  Future<void> _fetchProducts() async {
+  Future<void> _fetchData() async {
     if (!mounted) return;
     setState(() => _isLoading = true);
 
     try {
-      final data = await supabase
+      // Fetch Categories
+      final categoriesData = await supabase
+          .from('categories')
+          .select('id, name')
+          .eq('store_id', widget.storeId)
+          .order('name');
+
+      // Fetch Products
+      final productsData = await supabase
           .from('products')
           .select('*, categories(name)')
           .eq('store_id', widget.storeId)
@@ -54,24 +65,42 @@ class _InventoryPageState extends State<InventoryPage> {
 
       if (mounted) {
         setState(() {
-          _products = List<Map<String, dynamic>>.from(data);
-          _filteredProducts = _products;
+          _categories = List<Map<String, dynamic>>.from(categoriesData);
+          _products = List<Map<String, dynamic>>.from(productsData);
+          _applyFilters();
           _isLoading = false;
         });
       }
     } catch (e) {
-      debugPrint("Error fetching products: $e");
+      debugPrint("Error fetching data: $e");
       if (mounted) setState(() => _isLoading = false);
     }
   }
 
   void _filterProducts() {
+    _applyFilters();
+  }
+
+  void _selectCategory(String? categoryId) {
+    setState(() {
+      _selectedCategoryId = categoryId;
+      _applyFilters();
+    });
+  }
+
+  void _applyFilters() {
     final query = _searchController.text.toLowerCase();
     setState(() {
       _filteredProducts = _products.where((product) {
         final name = product['name'].toString().toLowerCase();
         final sku = (product['sku'] ?? '').toString().toLowerCase();
-        return name.contains(query) || sku.contains(query);
+        final matchesSearch = name.contains(query) || sku.contains(query);
+
+        final categoryId = product['category_id'];
+        final matchesCategory =
+            _selectedCategoryId == null || categoryId == _selectedCategoryId;
+
+        return matchesSearch && matchesCategory;
       }).toList();
     });
   }
@@ -86,7 +115,7 @@ class _InventoryPageState extends State<InventoryPage> {
     );
 
     if (result == true) {
-      _fetchProducts();
+      _fetchData();
     }
   }
 
@@ -108,7 +137,7 @@ class _InventoryPageState extends State<InventoryPage> {
     }
 
     if (result['status'] == 'success') {
-      _fetchProducts();
+      _fetchData();
       if (mounted) {
         _showImportResultDialog(
           success: result['successCount'],
@@ -197,12 +226,12 @@ class _InventoryPageState extends State<InventoryPage> {
           try {
             final uri = Uri.parse(imageUrl);
             final pathSegments = uri.pathSegments;
-            final bucketIndex = pathSegments.indexOf('product');
+            final bucketIndex = pathSegments.indexOf('products');
             if (bucketIndex != -1 && bucketIndex + 1 < pathSegments.length) {
               final fullPathInsideBucket = pathSegments
                   .sublist(bucketIndex + 1)
                   .join('/');
-              await supabase.storage.from('product').remove([
+              await supabase.storage.from('products').remove([
                 fullPathInsideBucket,
               ]);
             }
@@ -211,7 +240,7 @@ class _InventoryPageState extends State<InventoryPage> {
           }
         }
 
-        _fetchProducts();
+        _fetchData();
       } catch (e) {
         debugPrint("Error deleting product: $e");
         if (mounted) {
@@ -310,46 +339,96 @@ class _InventoryPageState extends State<InventoryPage> {
           // Product List
           Expanded(
             child: RefreshIndicator(
-              onRefresh: _fetchProducts,
+              onRefresh: _fetchData,
               color: const Color(0xFFEA5700),
               child: _isLoading
                   ? const Center(child: CircularProgressIndicator())
-                  : _filteredProducts.isEmpty
-                  ? ListView(
+                  : Column(
                       children: [
+                        // Categories List
                         SizedBox(
-                          height: MediaQuery.of(context).size.height * 0.2,
-                        ),
-                        Center(
-                          child: Column(
-                            children: [
-                              Icon(
-                                CupertinoIcons.cube_box,
-                                size: 80,
-                                color: Colors.grey[200],
-                              ),
-                              const SizedBox(height: 16),
-                              Text(
-                                _searchController.text.isEmpty
-                                    ? "Belum ada produk"
-                                    : "Produk tidak ditemukan",
-                                style: GoogleFonts.inter(color: Colors.grey),
-                              ),
-                            ],
+                          height: 50,
+                          child: ListView.separated(
+                            padding: const EdgeInsets.symmetric(horizontal: 20),
+                            scrollDirection: Axis.horizontal,
+                            itemCount: _categories.length + 1,
+                            separatorBuilder: (c, i) =>
+                                const SizedBox(width: 10),
+                            itemBuilder: (context, index) {
+                              final isAll = index == 0;
+                              final cat = isAll ? null : _categories[index - 1];
+                              final isSelected = isAll
+                                  ? _selectedCategoryId == null
+                                  : _selectedCategoryId == cat!['id'];
+
+                              return ChoiceChip(
+                                label: Text(isAll ? "Semua" : cat!['name']),
+                                selected: isSelected,
+                                onSelected: (_) =>
+                                    _selectCategory(isAll ? null : cat!['id']),
+                                selectedColor: const Color(0xFFEA5700),
+                                backgroundColor: Theme.of(context).cardColor,
+                                labelStyle: GoogleFonts.inter(
+                                  color: isSelected
+                                      ? Colors.white
+                                      : Colors.grey[700],
+                                  fontWeight: isSelected
+                                      ? FontWeight.bold
+                                      : FontWeight.w500,
+                                ),
+                                side: BorderSide.none,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                              );
+                            },
                           ),
                         ),
+                        const SizedBox(height: 10),
+                        Expanded(
+                          child: _filteredProducts.isEmpty
+                              ? ListView(
+                                  children: [
+                                    SizedBox(
+                                      height:
+                                          MediaQuery.of(context).size.height *
+                                          0.2,
+                                    ),
+                                    Center(
+                                      child: Column(
+                                        children: [
+                                          Icon(
+                                            CupertinoIcons.cube_box,
+                                            size: 80,
+                                            color: Colors.grey[200],
+                                          ),
+                                          const SizedBox(height: 16),
+                                          Text(
+                                            _searchController.text.isEmpty
+                                                ? "Belum ada produk"
+                                                : "Produk tidak ditemukan",
+                                            style: GoogleFonts.inter(
+                                              color: Colors.grey,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                )
+                              : ListView.builder(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 20,
+                                    vertical: 10,
+                                  ),
+                                  itemCount: _filteredProducts.length,
+                                  itemBuilder: (context, index) {
+                                    final product = _filteredProducts[index];
+                                    return _buildProductCard(product, index);
+                                  },
+                                ),
+                        ),
                       ],
-                    )
-                  : ListView.builder(
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                      physics: const AlwaysScrollableScrollPhysics(
-                        parent: BouncingScrollPhysics(),
-                      ),
-                      itemCount: _filteredProducts.length,
-                      itemBuilder: (context, index) {
-                        final product = _filteredProducts[index];
-                        return _buildProductCard(product, index);
-                      },
                     ),
             ),
           ),

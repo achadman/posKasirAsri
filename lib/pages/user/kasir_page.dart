@@ -7,6 +7,8 @@ import '../../widgets/product_grid.dart';
 import '../../widgets/kasir_drawer.dart';
 import '../../services/order_service.dart';
 import '../../services/receipt_service.dart';
+import 'package:provider/provider.dart';
+import '../../controllers/admin_controller.dart';
 import 'widgets/product_option_modal.dart';
 import 'widgets/receipt_preview_page.dart';
 
@@ -49,6 +51,9 @@ class _KasirPageState extends State<KasirPage> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<AdminController>().loadInitialData();
+    });
     _loadStoreId();
     _loadCategories();
   }
@@ -575,14 +580,16 @@ class _KasirPageState extends State<KasirPage> {
   IconData _getCategoryIcon(String name) {
     name = name.toLowerCase();
     if (name.contains('semua')) return Icons.grid_view_rounded;
-    if (name.contains('makanan') || name.contains('nusantara'))
+    if (name.contains('makanan') || name.contains('nusantara')) {
       return Icons.restaurant_rounded;
+    }
     if (name.contains('minuman')) return Icons.local_drink_rounded;
     if (name.contains('snack')) return Icons.cookie_rounded;
     if (name.contains('pasta')) return Icons.ramen_dining_rounded;
     if (name.contains('western')) return Icons.fastfood_rounded;
-    if (name.contains('pencuci mulut') || name.contains('dessert'))
+    if (name.contains('pencuci mulut') || name.contains('dessert')) {
       return Icons.icecream_rounded;
+    }
     return Icons.category_rounded;
   }
 

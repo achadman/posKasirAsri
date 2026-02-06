@@ -15,6 +15,7 @@ class AdminDrawer extends StatelessWidget {
   final VoidCallback onKasirTap;
   final VoidCallback onEmployeeTap;
   final VoidCallback onHistoryTap;
+  final VoidCallback onAnalyticsTap;
   final VoidCallback onLogoutTap;
 
   const AdminDrawer({
@@ -31,6 +32,7 @@ class AdminDrawer extends StatelessWidget {
     required this.onKasirTap,
     required this.onEmployeeTap,
     required this.onHistoryTap,
+    required this.onAnalyticsTap,
     required this.onLogoutTap,
   });
 
@@ -108,13 +110,18 @@ class AdminDrawer extends StatelessWidget {
                     onHistoryTap();
                   },
                 ),
-                if (role == 'owner' || role == 'admin') ...[
+                if (role?.toLowerCase() == 'owner' ||
+                    role?.toLowerCase() == 'admin') ...[
                   _buildDrawerSectionTitle("LAINNYA"),
                   _buildDrawerItem(
                     context: context,
-                    icon: CupertinoIcons.graph_square,
+                    icon: Icons.analytics_rounded,
                     label: "Laporan Analitik",
-                    onTap: () {},
+                    color: primaryColor,
+                    onTap: () {
+                      Navigator.pop(context);
+                      onAnalyticsTap();
+                    },
                   ),
                 ],
               ],

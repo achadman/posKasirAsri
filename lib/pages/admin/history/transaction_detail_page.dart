@@ -2,7 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 import '../../../widgets/floating_card.dart';
+import '../../../services/receipt_service.dart';
+import '../../../controllers/admin_controller.dart';
+import '../../user/widgets/receipt_preview_page.dart';
 
 class TransactionDetailPage extends StatelessWidget {
   final Map<String, dynamic> transaction;
@@ -189,6 +193,71 @@ class TransactionDetailPage extends StatelessWidget {
                     ],
                   );
                 },
+              ),
+            ),
+            const SizedBox(height: 32),
+
+            // Print Action
+            SizedBox(
+              width: double.infinity,
+              height: 56,
+              child: ElevatedButton.icon(
+                onPressed: () async {
+                  final adminCtrl = context.read<AdminController>();
+                  final receiptService = ReceiptService();
+
+                  final pdfData = await receiptService.generateReceiptPdf(
+                    storeName: adminCtrl.storeName ?? "Toko Asri",
+                    storeLogoUrl: adminCtrl.storeLogo,
+                    transactionId: transaction['id'].toString(),
+                    createdAt: date,
+                    items: items.map((it) {
+                      return {
+                        'name': it['products']?['name'] ?? 'Produk',
+                        'quantity': it['quantity'],
+                        'total_price':
+                            (it['price_at_time'] as num).toDouble() *
+                            (it['quantity'] as num).toDouble(),
+                      };
+                    }).toList(),
+                    totalAmount: total,
+                    cashReceived:
+                        (transaction['cash_received'] as num?)?.toDouble() ??
+                        total,
+                    change:
+                        (transaction['cash_change'] as num?)?.toDouble() ?? 0,
+                    paymentMethod:
+                        transaction['payment_method']?.toString() ?? "TUNAI",
+                  );
+
+                  if (context.mounted) {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => ReceiptPreviewPage(
+                          pdfData: pdfData,
+                          fileName:
+                              "Struk_${transaction['id'].toString().substring(0, 8)}.pdf",
+                        ),
+                      ),
+                    );
+                  }
+                },
+                icon: const Icon(CupertinoIcons.printer),
+                label: Text(
+                  "CETAK STRUK",
+                  style: GoogleFonts.poppins(
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 1.1,
+                  ),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFEA5700),
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                ),
               ),
             ),
             const SizedBox(height: 40),

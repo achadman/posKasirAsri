@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class OrderService {
@@ -10,6 +11,9 @@ class OrderService {
     required double totalAmount,
     required List<Map<String, dynamic>> items,
   }) async {
+    debugPrint(
+      "OrderService.createOrder: storeId=$storeId, userId=$userId, amount=$totalAmount",
+    );
     // 1. Insert transaction
     final txResponse = await _supabase
         .from('transactions')
