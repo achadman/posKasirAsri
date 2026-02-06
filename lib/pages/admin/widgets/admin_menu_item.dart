@@ -69,42 +69,66 @@ class AdminMenuSection extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 20),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: items.map((item) {
-              return GestureDetector(
-                onTap: item.onTap,
-                child: Column(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(15),
-                      decoration: BoxDecoration(
-                        color: item.color.withValues(alpha: 0.1),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(item.icon, color: item.color, size: 24),
-                    ),
-                    const SizedBox(height: 8),
-                    SizedBox(
-                      width: 80, // Constrain item width
-                      child: Text(
-                        item.label,
-                        textAlign: TextAlign.center,
-                        style: GoogleFonts.inter(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                          color: Theme.of(context).brightness == Brightness.dark
-                              ? Colors.white70
-                              : const Color(0xFF636E72),
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                        maxLines: 1,
-                      ),
-                    ),
-                  ],
+          items.length <= 3
+              ? Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: items.map((item) {
+                    return _buildItem(context, item);
+                  }).toList(),
+                )
+              : LayoutBuilder(
+                  builder: (context, constraints) {
+                    final crossAxisCount = 2; // Fixed 2 columns when > 3 items
+                    final spacing = 16.0;
+                    final totalSpacing = spacing * (crossAxisCount - 1);
+                    final itemWidth =
+                        (constraints.maxWidth - totalSpacing) / crossAxisCount;
+
+                    return Wrap(
+                      alignment: WrapAlignment.start,
+                      runSpacing: 16,
+                      spacing: spacing,
+                      children: items.map((item) {
+                        return SizedBox(
+                          width: itemWidth,
+                          child: _buildItem(context, item),
+                        );
+                      }).toList(),
+                    );
+                  },
                 ),
-              );
-            }).toList(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildItem(BuildContext context, AdminMenuItem item) {
+    return GestureDetector(
+      onTap: item.onTap,
+      behavior: HitTestBehavior.opaque,
+      child: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: item.color.withValues(alpha: 0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(item.icon, color: item.color, size: 28),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            item.label,
+            textAlign: TextAlign.center,
+            style: GoogleFonts.inter(
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? Colors.white70
+                  : const Color(0xFF636E72),
+            ),
+            overflow: TextOverflow.ellipsis,
+            maxLines: 2,
           ),
         ],
       ),

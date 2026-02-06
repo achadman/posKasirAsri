@@ -266,83 +266,88 @@ class _KasirDrawerState extends State<KasirDrawer> {
             const SizedBox(height: 12),
 
             // Navigation Items
-            _buildNavItem(
-              icon: CupertinoIcons.home,
-              label: "Beranda",
-              isSelected: widget.currentRoute == '/kasir',
-              onTap: () {
-                Navigator.pop(context);
-                if (widget.currentRoute != '/kasir') {
-                  Navigator.pushReplacementNamed(context, '/kasir');
-                }
-              },
-              textColor: textColor,
-              accentColor: accentColor,
-            ),
-            _buildNavItem(
-              icon: CupertinoIcons.clock,
-              label: "Absensi Staff",
-              isSelected: widget.currentRoute == '/attendance',
-              onTap: () {
-                Navigator.pop(context);
-                if (widget.currentRoute != '/attendance') {
-                  Navigator.pushReplacementNamed(context, '/attendance');
-                }
-              },
-              textColor: textColor,
-              accentColor: accentColor,
-            ),
-            _buildNavItem(
-              icon: CupertinoIcons.doc_text,
-              label: "Riwayat Pesanan",
-              isSelected: widget.currentRoute == '/order-history',
-              onTap: () {
-                Navigator.pop(context);
-                if (_storeId != null) {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => HistoryPage(storeId: _storeId!),
-                    ),
-                  );
-                }
-              },
-              textColor: textColor,
-              accentColor: accentColor,
-            ),
-            if (_role == 'admin' || _role == 'owner') ...[
-              const Divider(),
-              _buildNavItem(
-                icon: CupertinoIcons.shield_lefthalf_fill,
-                label: "Panel Admin",
-                isSelected: false,
-                onTap: () {
-                  Navigator.pop(context);
-                  Navigator.pushReplacementNamed(context, '/admin');
-                },
-                textColor: textColor,
-                accentColor: Colors.blue,
-              ),
-            ],
-
-            _buildNavItem(
-              icon: CupertinoIcons.printer,
-              label: "Pengaturan Printer",
-              isSelected: widget.currentRoute == '/printer-settings',
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (ctx) => const PrinterSettingsPage(),
+            Expanded(
+              child: ListView(
+                padding: EdgeInsets.zero,
+                children: [
+                  _buildNavItem(
+                    icon: CupertinoIcons.home,
+                    label: "Beranda",
+                    isSelected: widget.currentRoute == '/kasir',
+                    onTap: () {
+                      Navigator.pop(context);
+                      if (widget.currentRoute != '/kasir') {
+                        Navigator.pushReplacementNamed(context, '/kasir');
+                      }
+                    },
+                    textColor: textColor,
+                    accentColor: accentColor,
                   ),
-                );
-              },
-              textColor: textColor,
-              accentColor: accentColor,
-            ),
+                  _buildNavItem(
+                    icon: CupertinoIcons.clock,
+                    label: "Absensi Staff",
+                    isSelected: widget.currentRoute == '/attendance',
+                    onTap: () {
+                      Navigator.pop(context);
+                      if (widget.currentRoute != '/attendance') {
+                        Navigator.pushReplacementNamed(context, '/attendance');
+                      }
+                    },
+                    textColor: textColor,
+                    accentColor: accentColor,
+                  ),
+                  _buildNavItem(
+                    icon: CupertinoIcons.doc_text,
+                    label: "Riwayat Pesanan",
+                    isSelected: widget.currentRoute == '/order-history',
+                    onTap: () {
+                      Navigator.pop(context);
+                      if (_storeId != null) {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => HistoryPage(storeId: _storeId!),
+                          ),
+                        );
+                      }
+                    },
+                    textColor: textColor,
+                    accentColor: accentColor,
+                  ),
+                  if (_role == 'admin' || _role == 'owner') ...[
+                    const Divider(),
+                    _buildNavItem(
+                      icon: CupertinoIcons.shield_lefthalf_fill,
+                      label: "Panel Admin",
+                      isSelected: false,
+                      onTap: () {
+                        Navigator.pop(context);
+                        Navigator.pushReplacementNamed(context, '/admin');
+                      },
+                      textColor: textColor,
+                      accentColor: Colors.blue,
+                    ),
+                  ],
 
-            const Spacer(),
+                  _buildNavItem(
+                    icon: CupertinoIcons.printer,
+                    label: "Pengaturan Printer",
+                    isSelected: widget.currentRoute == '/printer-settings',
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (ctx) => const PrinterSettingsPage(),
+                        ),
+                      );
+                    },
+                    textColor: textColor,
+                    accentColor: accentColor,
+                  ),
+                ],
+              ),
+            ),
 
             // Dark Mode Toggle
             Padding(
