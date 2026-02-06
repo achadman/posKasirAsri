@@ -225,7 +225,7 @@ class _KasirPageState extends State<KasirPage> {
   }
 
   Future<void> _processCheckout() async {
-    if (_cartItems.isEmpty || _storeId == null) return;
+    if (_isProcessing || _cartItems.isEmpty || _storeId == null) return;
 
     setState(() => _isProcessing = true);
     try {
