@@ -245,103 +245,105 @@ class _EmployeePageState extends State<EmployeePage> {
           onPressed: () => Navigator.pop(context),
         ),
       ),
-      body: Stack(
-        children: [
-          FutureBuilder<List<Map<String, dynamic>>>(
-            future: _employeeService.getEmployees(widget.storeId),
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting &&
-                  !_isLoading) {
-                return const Center(child: CupertinoActivityIndicator());
-              }
-
-              final employees = snapshot.data ?? [];
-
-              if (employees.isEmpty) {
-                return Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        CupertinoIcons.person_2,
-                        size: 80,
-                        color: isDark ? Colors.white10 : Colors.grey[200],
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        "Belum ada karyawan terdaftar.",
-                        style: GoogleFonts.inter(
-                          color: isDark ? Colors.white38 : Colors.grey[600],
+      body: SafeArea(
+        child: Stack(
+          children: [
+            FutureBuilder<List<Map<String, dynamic>>>(
+              future: _employeeService.getEmployees(widget.storeId),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting &&
+                    !_isLoading) {
+                  return const Center(child: CupertinoActivityIndicator());
+                }
+  
+                final employees = snapshot.data ?? [];
+  
+                if (employees.isEmpty) {
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          CupertinoIcons.person_2,
+                          size: 80,
+                          color: isDark ? Colors.white10 : Colors.grey[200],
                         ),
-                      ),
-                    ],
-                  ),
-                );
-              }
-
-              return ListView.builder(
-                padding: const EdgeInsets.fromLTRB(20, 10, 20, 100),
-                itemCount: employees.length,
-                itemBuilder: (context, index) {
-                  final emp = employees[index];
-                  return FloatingCard(
-                    padding: const EdgeInsets.all(12),
-                    child: ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      leading: Container(
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFEA5700).withValues(alpha: 0.1),
-                          shape: BoxShape.circle,
+                        const SizedBox(height: 16),
+                        Text(
+                          "Belum ada karyawan terdaftar.",
+                          style: GoogleFonts.inter(
+                            color: isDark ? Colors.white38 : Colors.grey[600],
+                          ),
                         ),
-                        child: const Icon(
-                          CupertinoIcons.person_fill,
-                          color: Color(0xFFEA5700),
-                        ),
-                      ),
-                      title: Text(
-                        emp['full_name'] ?? 'Karyawan',
-                        style: GoogleFonts.poppins(
-                          fontWeight: FontWeight.w600,
-                          color: isDark
-                              ? Colors.white
-                              : const Color(0xFF2D3436),
-                        ),
-                      ),
-                      subtitle: Text(
-                        emp['role']?.toString().toUpperCase() ?? 'KASIR',
-                        style: GoogleFonts.inter(
-                          fontSize: 12,
-                          color: const Color(0xFFEA5700),
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 0.5,
-                        ),
-                      ),
-                      trailing: IconButton(
-                        icon: const Icon(
-                          CupertinoIcons.trash,
-                          color: Colors.redAccent,
-                          size: 20,
-                        ),
-                        onPressed: () => _confirmDeletion(emp),
-                      ),
+                      ],
                     ),
                   );
-                },
-              );
-            },
-          ),
-          if (_isLoading)
-            Container(
-              color: Colors.black26,
-              child: const Center(
-                child: CupertinoActivityIndicator(
-                  radius: 15,
-                  color: Colors.white,
+                }
+  
+                return ListView.builder(
+                  padding: const EdgeInsets.fromLTRB(20, 10, 20, 100),
+                  itemCount: employees.length,
+                  itemBuilder: (context, index) {
+                    final emp = employees[index];
+                    return FloatingCard(
+                      padding: const EdgeInsets.all(12),
+                      child: ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        leading: Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFEA5700).withValues(alpha: 0.1),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            CupertinoIcons.person_fill,
+                            color: Color(0xFFEA5700),
+                          ),
+                        ),
+                        title: Text(
+                          emp['full_name'] ?? 'Karyawan',
+                          style: GoogleFonts.poppins(
+                            fontWeight: FontWeight.w600,
+                            color: isDark
+                                ? Colors.white
+                                : const Color(0xFF2D3436),
+                          ),
+                        ),
+                        subtitle: Text(
+                          emp['role']?.toString().toUpperCase() ?? 'KASIR',
+                          style: GoogleFonts.inter(
+                            fontSize: 12,
+                            color: const Color(0xFFEA5700),
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                        trailing: IconButton(
+                          icon: const Icon(
+                            CupertinoIcons.trash,
+                            color: Colors.redAccent,
+                            size: 20,
+                          ),
+                          onPressed: () => _confirmDeletion(emp),
+                        ),
+                      ),
+                    );
+                  },
+                );
+              },
+            ),
+            if (_isLoading)
+              Container(
+                color: Colors.black26,
+                child: const Center(
+                  child: CupertinoActivityIndicator(
+                    radius: 15,
+                    color: Colors.white,
+                  ),
                 ),
               ),
-            ),
-        ],
+          ],
+        ),
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _isLoading ? null : _addEmployee,

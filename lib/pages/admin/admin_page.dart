@@ -289,7 +289,7 @@ class _AdminPageState extends State<AdminPage> {
                                 onTap: () => Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (_) => HistoryPage(
+                                    builder: (_) => EmployeePage(
                                       storeId: controller.storeId!,
                                     ),
                                   ),
