@@ -16,6 +16,8 @@ import 'controllers/admin_controller.dart';
 import 'controllers/analytics_controller.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'pages/user/order_history_page.dart';
+import 'services/bluetooth_printer_service.dart';
 
 final supabase = Supabase.instance.client;
 
@@ -51,8 +53,9 @@ class _RootAppState extends State<RootApp> {
     );
 
     final localeInit = initializeDateFormatting('id', null); // Added
+    final printerInit = BluetoothPrinterService().init();
 
-    await Future.wait([minSplashTime, supabaseInit, localeInit]);
+    await Future.wait([minSplashTime, supabaseInit, localeInit, printerInit]);
   }
 
   @override

@@ -6,6 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:image_picker/image_picker.dart';
 import '../controllers/theme_controller.dart';
 import '../pages/admin/history/history_page.dart';
+import '../pages/other/printer_settings_page.dart';
 
 class KasirDrawer extends StatefulWidget {
   final String currentRoute;
@@ -323,6 +324,23 @@ class _KasirDrawerState extends State<KasirDrawer> {
                 accentColor: Colors.blue,
               ),
             ],
+
+            _buildNavItem(
+              icon: CupertinoIcons.printer,
+              label: "Pengaturan Printer",
+              isSelected: widget.currentRoute == '/printer-settings',
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (ctx) => const PrinterSettingsPage(),
+                  ),
+                );
+              },
+              textColor: textColor,
+              accentColor: accentColor,
+            ),
 
             const Spacer(),
 

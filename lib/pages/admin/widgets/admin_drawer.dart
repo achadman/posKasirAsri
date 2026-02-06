@@ -16,6 +16,7 @@ class AdminDrawer extends StatelessWidget {
   final VoidCallback onEmployeeTap;
   final VoidCallback onHistoryTap;
   final VoidCallback onAnalyticsTap;
+  final VoidCallback onPrinterTap;
   final VoidCallback onLogoutTap;
 
   const AdminDrawer({
@@ -33,6 +34,7 @@ class AdminDrawer extends StatelessWidget {
     required this.onEmployeeTap,
     required this.onHistoryTap,
     required this.onAnalyticsTap,
+    required this.onPrinterTap,
     required this.onLogoutTap,
   });
 
@@ -108,6 +110,15 @@ class AdminDrawer extends StatelessWidget {
                   onTap: () {
                     Navigator.pop(context);
                     onHistoryTap();
+                  },
+                ),
+                _buildDrawerItem(
+                  context: context,
+                  icon: CupertinoIcons.printer,
+                  label: "Pengaturan Printer",
+                  onTap: () {
+                    Navigator.pop(context);
+                    onPrinterTap();
                   },
                 ),
                 if (role?.toLowerCase() == 'owner' ||

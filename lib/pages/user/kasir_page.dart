@@ -311,6 +311,14 @@ class _KasirPageState extends State<KasirPage> {
             builder: (ctx) => ReceiptPreviewPage(
               pdfData: pdfData,
               fileName: "Struk_${txId.substring(0, 8)}.pdf",
+              storeName: currentStoreName,
+              transactionId: txId.substring(0, 8).toUpperCase(),
+              createdAt: now,
+              items: receiptItems,
+              totalAmount: totalAmount,
+              cashReceived: finalCash,
+              change: finalChange,
+              paymentMethod: _selectedPaymentMethod,
             ),
           ),
         );
