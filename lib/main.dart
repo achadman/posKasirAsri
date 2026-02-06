@@ -16,7 +16,6 @@ import 'controllers/admin_controller.dart';
 import 'controllers/analytics_controller.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/date_symbol_data_local.dart';
-import 'pages/user/order_history_page.dart';
 import 'services/bluetooth_printer_service.dart';
 
 final supabase = Supabase.instance.client;
