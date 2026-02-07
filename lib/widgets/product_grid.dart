@@ -52,12 +52,16 @@ class ProductGrid extends StatelessWidget {
 
         var products = snapshot.data!;
 
-        // Client-side Filtering (Search)
-        if (searchQuery.isNotEmpty) {
-          products = products.where((p) {
+        // Client-side Filtering (Search & Deleted)
+        products = products.where((p) {
+          final isDeleted = p['is_deleted'] ?? false;
+          if (isDeleted == true) return false;
+
+          if (searchQuery.isNotEmpty) {
             return p['name'].toString().toLowerCase().contains(searchQuery);
-          }).toList();
-        }
+          }
+          return true;
+        }).toList();
 
         // Client-side Filtering (Category)
         if (categoryFilter != null && categoryFilter != "Semua") {

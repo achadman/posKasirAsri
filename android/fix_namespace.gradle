@@ -1,0 +1,21 @@
+def configureNamespace = { project ->
+    if (project.plugins.hasPlugin("com.android.library")) {
+        def android = project.extensions.getByName("android")
+        if (android.namespace == null) {
+            def namespace = project.group.toString()
+            if (namespace == null || namespace.isEmpty() || namespace == "null") {
+                namespace = "com.example.${project.name}"
+            }
+            android.namespace = namespace
+            println "Applied namespace '${namespace}' to project '${project.name}'"
+        }
+    }
+}
+
+if (project.state.executed) {
+    configureNamespace(project)
+} else {
+    afterEvaluate { project ->
+        configureNamespace(project)
+    }
+}

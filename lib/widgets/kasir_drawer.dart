@@ -399,9 +399,32 @@ class _KasirDrawerState extends State<KasirDrawer> {
                 ),
               ),
               onTap: () async {
-                await supabase.auth.signOut();
-                if (!context.mounted) return;
-                Navigator.pushReplacementNamed(context, '/login');
+                final shouldLogout = await showCupertinoDialog<bool>(
+                  context: context,
+                  builder: (context) => CupertinoAlertDialog(
+                    title: const Text("Konfirmasi Keluar"),
+                    content: const Text(
+                      "Apakah Anda yakin ingin keluar dari aplikasi?",
+                    ),
+                    actions: [
+                      CupertinoDialogAction(
+                        child: const Text("Batal"),
+                        onPressed: () => Navigator.pop(context, false),
+                      ),
+                      CupertinoDialogAction(
+                        isDestructiveAction: true,
+                        child: const Text("Keluar"),
+                        onPressed: () => Navigator.pop(context, true),
+                      ),
+                    ],
+                  ),
+                );
+
+                if (shouldLogout == true) {
+                  await supabase.auth.signOut();
+                  if (!context.mounted) return;
+                  Navigator.pushReplacementNamed(context, '/login');
+                }
               },
             ),
             const SizedBox(height: 16),

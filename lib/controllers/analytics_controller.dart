@@ -147,7 +147,8 @@ class AnalyticsController extends ChangeNotifier {
     final products = await supabase
         .from('products')
         .select('id')
-        .eq('store_id', _storeId!);
+        .eq('store_id', _storeId!)
+        .eq('is_deleted', false); // Filter deleted products
     _totalProductCount = products.length;
   }
 

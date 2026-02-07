@@ -66,7 +66,9 @@ class _InventoryPageState extends State<InventoryPage> {
       if (mounted) {
         setState(() {
           _categories = List<Map<String, dynamic>>.from(categoriesData);
-          _products = List<Map<String, dynamic>>.from(productsData);
+          _products = List<Map<String, dynamic>>.from(
+            productsData,
+          ).where((p) => (p['is_deleted'] ?? false) == false).toList();
           _applyFilters();
           _isLoading = false;
         });
@@ -214,31 +216,18 @@ class _InventoryPageState extends State<InventoryPage> {
 
     if (confirm == true) {
       try {
-        // Fetch product to get image_url before deletion
-        final product = _products.firstWhere((p) => p['id'] == id);
-        final imageUrl = product['image_url'];
+        // Fetch product to get image_url before deletion (Optional, kept for future restore logic)
+        // final product = _products.firstWhere((p) => p['id'] == id);
+        // final imageUrl = product['image_url']; // Unused in soft delete
 
-        // Delete from Database
-        await supabase.from('products').delete().eq('id', id);
+        // Soft Delete: Update is_deleted = true
+        await supabase
+            .from('products')
+            .update({'is_deleted': true})
+            .eq('id', id);
 
-        // Delete from Storage if exists
-        if (imageUrl != null) {
-          try {
-            final uri = Uri.parse(imageUrl);
-            final pathSegments = uri.pathSegments;
-            final bucketIndex = pathSegments.indexOf('products');
-            if (bucketIndex != -1 && bucketIndex + 1 < pathSegments.length) {
-              final fullPathInsideBucket = pathSegments
-                  .sublist(bucketIndex + 1)
-                  .join('/');
-              await supabase.storage.from('products').remove([
-                fullPathInsideBucket,
-              ]);
-            }
-          } catch (e) {
-            debugPrint("Storage cleanup error: $e");
-          }
-        }
+        // NOTE: We do NOT delete the image from storage because the product
+        // still exists in history/transactions and might be restored later.
 
         _fetchData();
       } catch (e) {

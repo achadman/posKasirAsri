@@ -155,7 +155,9 @@ class AdminController extends ChangeNotifier {
           .eq('is_stock_managed', true)
           .order('stock_quantity', ascending: true);
 
-      final newLowStockItems = List<Map<String, dynamic>>.from(products);
+      final newLowStockItems = List<Map<String, dynamic>>.from(
+        products,
+      ).where((p) => (p['is_deleted'] ?? false) == false).toList();
 
       // Update values and notify
       bool changed = false;
@@ -185,6 +187,70 @@ class AdminController extends ChangeNotifier {
       }
     } catch (e) {
       debugPrint("AdminController: Error fetching stats: $e");
+    }
+  }
+
+  Future<void> resetStore({bool deleteProducts = false}) async {
+    if (_storeId == null) return;
+
+    try {
+      // 1. Delete Transaction Items (Foreign Key Constraint)
+      // We need to find all transaction IDs for this store first or just delete using inner join logic if Supabase supports it cleanly.
+      // But RLS usually handles "delete if you own it", so let's try direct delete if possible or cascading.
+      // Safest way without cascade config in DB is to delete items first.
+
+      // Actually, if we delete transactions, items should cascade IF structured that way.
+      // If not, we must delete items first. Let's assume standard behavior but be safe.
+
+      // Get all transaction IDs for this store
+      final txs = await supabase
+          .from('transactions')
+          .select('id')
+          .eq('store_id', _storeId!);
+
+      if (txs.isNotEmpty) {
+        final txIds = txs.map((t) => t['id'] as String).toList();
+        await supabase
+            .from('transaction_items')
+            .delete()
+            .filter(
+              'transaction_id',
+              'in',
+              txIds,
+            ); // Fixed: Use filter for 'in'
+        await supabase
+            .from('transactions')
+            .delete()
+            .filter('id', 'in', txIds); // Fixed: Use filter for 'in'
+      }
+
+      // 2. Delete Attendance Logs (Clean start for employees too)
+      await supabase.from('attendance_logs').delete().eq('store_id', _storeId!);
+
+      // 3. Handle Products & Categories
+      if (deleteProducts) {
+        // Hard Delete all products
+        await supabase.from('products').delete().eq('store_id', _storeId!);
+
+        // Hard Delete all categories (Since products are gone, categories are useless)
+        await supabase.from('categories').delete().eq('store_id', _storeId!);
+      } else {
+        // Reset Stock Only
+        await supabase
+            .from('products')
+            .update({
+              'stock_quantity': 0,
+              'is_deleted': false,
+            }) // Ensure they are visible
+            .eq('store_id', _storeId!)
+            .eq('is_stock_managed', true);
+      }
+
+      // Refresh Stats
+      await fetchDashboardStats();
+    } catch (e) {
+      debugPrint("AdminController: Error resetting store: $e");
+      rethrow;
     }
   }
 }

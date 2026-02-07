@@ -43,7 +43,8 @@ class EmployeeService {
       data: {
         'full_name': fullName,
         'role': 'cashier',
-        'permissions': permissions ??
+        'permissions':
+            permissions ??
             {
               'manage_inventory': false,
               'manage_categories': false,
@@ -67,7 +68,8 @@ class EmployeeService {
               'full_name': fullName,
               'role': 'cashier',
               'store_id': storeId,
-              'permissions': permissions ??
+              'permissions':
+                  permissions ??
                   {
                     'manage_inventory': false,
                     'manage_categories': false,
@@ -92,11 +94,8 @@ class EmployeeService {
     }
   }
 
-  /// Remove an employee from the store (reset role to user and clear store_id)
+  /// Remove an employee from the database permanently
   Future<void> removeEmployee(String userId) async {
-    await _supabase
-        .from('profiles')
-        .update({'store_id': null, 'role': 'user'})
-        .eq('id', userId);
+    await _supabase.from('profiles').delete().eq('id', userId);
   }
 }

@@ -12,7 +12,6 @@ dependencies:
     sdk: flutter
   provider: ^6.1.2
   http: ^1.1.0
-  image_pickers: ^2.0.6
   cloudinary_public: ^0.23.1
   pdf: ^3.11.3
   printing: ^5.11.0
@@ -43,5 +42,4 @@ flutter_launcher_icons:
 flutter:
   uses-material-design: true
   assets:
-    - assets/images/
     - assets/logo/

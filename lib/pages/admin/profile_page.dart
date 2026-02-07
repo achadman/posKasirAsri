@@ -341,6 +341,146 @@ class _ProfilePageState extends State<ProfilePage> {
     }
   }
 
+  Future<void> _confirmResetStore() async {
+    final controller = TextEditingController();
+    // Using a ValueNotifier or StatefulBuilder inside dialog for checkbox state
+    // But since we are outside build, we can't use simple bool var for dialog state update without StatefulBuilder
+    // which I already added in the previous (broken) attempt.
+    // Let's implement it cleanly.
+
+    // We need to check if AdminController is available or just do logic here.
+    // Doing logic here as previously planned to be safe.
+
+    bool deleteProducts = false;
+
+    await showDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              backgroundColor: Theme.of(context).cardColor,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+              title: Text(
+                "RESET TOKO?",
+                style: GoogleFonts.poppins(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.red,
+                ),
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    "Tindakan ini akan MENGHAPUS SEMUA RIWAYAT PENJUALAN dan LAPORAN. Data yang dihapus tidak dapat dikembalikan.",
+                    style: GoogleFonts.inter(fontSize: 13),
+                  ),
+                  const SizedBox(height: 16),
+                  CheckboxListTile(
+                    value: deleteProducts,
+                    onChanged: (val) => setState(() => deleteProducts = val!),
+                    title: Text(
+                      "Hapus juga semua produk?",
+                      style: GoogleFonts.inter(fontSize: 13),
+                    ),
+                    controlAffinity: ListTileControlAffinity.leading,
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: controller,
+                    decoration: InputDecoration(
+                      labelText: 'Ketik "RESET" untuk konfirmasi',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text("Batal"),
+                ),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                  onPressed: () {
+                    Navigator.pop(context, controller.text);
+                  },
+                  child: const Text(
+                    "HAPUS DATA",
+                    style: TextStyle(color: Colors.white),
+                  ),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    ).then((result) async {
+      if (result == "RESET") {
+        setState(() => _isLoading = true);
+        try {
+          // Logic to wipe data
+          // final user = supabase.auth.currentUser; // Unused
+          // 1. Get Store IDd.isEmpty) return;
+
+          // Transactions
+          final txs = await supabase
+              .from('transactions')
+              .select('id')
+              .eq('store_id', widget.storeId);
+
+          if (txs.isNotEmpty) {
+            final txIds = txs.map((t) => t['id'] as String).toList();
+            await supabase
+                .from('transaction_items')
+                .delete()
+                .filter('transaction_id', 'in', txIds);
+            await supabase
+                .from('transactions')
+                .delete()
+                .filter('id', 'in', txIds);
+          }
+
+          // Products
+          if (deleteProducts) {
+            await supabase
+                .from('products')
+                .update({'is_deleted': true})
+                .eq('store_id', widget.storeId);
+          } else {
+            await supabase
+                .from('products')
+                .update({'stock_quantity': 0})
+                .eq('store_id', widget.storeId)
+                .eq('is_stock_managed', true);
+          }
+
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text("Toko berhasil di-reset."),
+                backgroundColor: Colors.green,
+              ),
+            );
+          }
+        } catch (e) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text("Error: $e"), backgroundColor: Colors.red),
+            );
+          }
+        } finally {
+          if (mounted) setState(() => _isLoading = false);
+        }
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final user = supabase.auth.currentUser;
@@ -428,6 +568,48 @@ class _ProfilePageState extends State<ProfilePage> {
                   const SizedBox(height: 20),
                   _buildThemeToggle(),
                   const SizedBox(height: 30),
+                  _buildSectionTitle("DANGER ZONE"), // Zona Berbahaya
+                  Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 24),
+                    decoration: BoxDecoration(
+                      color: Colors.red.withValues(alpha: 0.05),
+                      borderRadius: BorderRadius.circular(24),
+                      border: Border.all(color: Colors.red, width: 1),
+                    ),
+                    child: ListTile(
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 5,
+                      ),
+                      leading: Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: Colors.red.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(
+                          Icons.delete_forever,
+                          color: Colors.red,
+                        ),
+                      ),
+                      title: Text(
+                        "Reset Toko",
+                        style: GoogleFonts.inter(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.red,
+                        ),
+                      ),
+                      subtitle: Text(
+                        "Hapus semua penjualan & reset stok",
+                        style: GoogleFonts.inter(
+                          fontSize: 11,
+                          color: Colors.red[300],
+                        ),
+                      ),
+                      onTap: _confirmResetStore,
+                    ),
+                  ),
+                  const SizedBox(height: 30),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 24),
                     child: SizedBox(
@@ -435,9 +617,33 @@ class _ProfilePageState extends State<ProfilePage> {
                       height: 55,
                       child: OutlinedButton.icon(
                         onPressed: () async {
-                          await supabase.auth.signOut();
-                          if (!context.mounted) return;
-                          Navigator.pushReplacementNamed(context, '/login');
+                          final shouldLogout = await showCupertinoDialog<bool>(
+                            context: context,
+                            builder: (context) => CupertinoAlertDialog(
+                              title: const Text("Konfirmasi Keluar"),
+                              content: const Text(
+                                "Apakah Anda yakin ingin keluar dari aplikasi?",
+                              ),
+                              actions: [
+                                CupertinoDialogAction(
+                                  child: const Text("Batal"),
+                                  onPressed: () =>
+                                      Navigator.pop(context, false),
+                                ),
+                                CupertinoDialogAction(
+                                  isDestructiveAction: true,
+                                  child: const Text("Keluar"),
+                                  onPressed: () => Navigator.pop(context, true),
+                                ),
+                              ],
+                            ),
+                          );
+
+                          if (shouldLogout == true) {
+                            await supabase.auth.signOut();
+                            if (!context.mounted) return;
+                            Navigator.pushReplacementNamed(context, '/login');
+                          }
                         },
                         icon: const Icon(
                           CupertinoIcons.power,
@@ -459,6 +665,10 @@ class _ProfilePageState extends State<ProfilePage> {
                       ),
                     ),
                   ),
+
+                  const SizedBox(
+                    height: 50,
+                  ), // Margin for Android navigation bar
                 ],
               ),
             ),

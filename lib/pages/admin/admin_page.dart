@@ -20,6 +20,7 @@ import 'widgets/admin_header.dart';
 import 'widgets/admin_menu_item.dart';
 import 'widgets/admin_drawer.dart';
 import 'widgets/low_stock_dialog.dart';
+import 'report/shift_report_page.dart';
 
 class AdminPage extends StatefulWidget {
   const AdminPage({super.key});
@@ -138,9 +139,32 @@ class _AdminPageState extends State<AdminPage> {
             role: controller.role,
             permissions: controller.permissions,
             onLogoutTap: () async {
-              await supabase.auth.signOut();
-              if (!context.mounted) return;
-              Navigator.pushReplacementNamed(context, '/login');
+              final shouldLogout = await showCupertinoDialog<bool>(
+                context: context,
+                builder: (context) => CupertinoAlertDialog(
+                  title: const Text("Konfirmasi Keluar"),
+                  content: const Text(
+                    "Apakah Anda yakin ingin keluar dari aplikasi?",
+                  ),
+                  actions: [
+                    CupertinoDialogAction(
+                      child: const Text("Batal"),
+                      onPressed: () => Navigator.pop(context, false),
+                    ),
+                    CupertinoDialogAction(
+                      isDestructiveAction: true,
+                      child: const Text("Keluar"),
+                      onPressed: () => Navigator.pop(context, true),
+                    ),
+                  ],
+                ),
+              );
+
+              if (shouldLogout == true) {
+                await supabase.auth.signOut();
+                if (!context.mounted) return;
+                Navigator.pushReplacementNamed(context, '/login');
+              }
             },
           ),
           body: RefreshIndicator(
@@ -199,8 +223,10 @@ class _AdminPageState extends State<AdminPage> {
                       children: [
                         if (controller.role == 'owner' ||
                             controller.role == 'admin' ||
-                            (controller.permissions?['manage_inventory'] ?? true) ||
-                            (controller.permissions?['manage_categories'] ?? true))
+                            (controller.permissions?['manage_inventory'] ??
+                                true) ||
+                            (controller.permissions?['manage_categories'] ??
+                                true))
                           _buildAnimatedSection(
                             delay: 0,
                             child: AdminMenuSection(
@@ -209,7 +235,9 @@ class _AdminPageState extends State<AdminPage> {
                               items: [
                                 if (controller.role == 'owner' ||
                                     controller.role == 'admin' ||
-                                    (controller.permissions?['manage_inventory'] ?? true))
+                                    (controller
+                                            .permissions?['manage_inventory'] ??
+                                        true))
                                   AdminMenuItem(
                                     label: "Barang",
                                     icon: CupertinoIcons.doc_text_viewfinder,
@@ -225,7 +253,9 @@ class _AdminPageState extends State<AdminPage> {
                                   ),
                                 if (controller.role == 'owner' ||
                                     controller.role == 'admin' ||
-                                    (controller.permissions?['manage_categories'] ?? true))
+                                    (controller
+                                            .permissions?['manage_categories'] ??
+                                        true))
                                   AdminMenuItem(
                                     label: "Kategori",
                                     icon: CupertinoIcons.grid,
@@ -257,7 +287,8 @@ class _AdminPageState extends State<AdminPage> {
                             items: [
                               if (controller.role == 'owner' ||
                                   controller.role == 'admin' ||
-                                  (controller.permissions?['pos_access'] ?? true))
+                                  (controller.permissions?['pos_access'] ??
+                                      true))
                                 AdminMenuItem(
                                   label: "Transaksi",
                                   icon: CupertinoIcons.cart_badge_plus,
@@ -274,7 +305,8 @@ class _AdminPageState extends State<AdminPage> {
                                 ),
                               if (controller.role == 'owner' ||
                                   controller.role == 'admin' ||
-                                  (controller.permissions?['view_history'] ?? true))
+                                  (controller.permissions?['view_history'] ??
+                                      true))
                                 AdminMenuItem(
                                   label: "Riwayat",
                                   icon: CupertinoIcons.doc_text,
@@ -290,7 +322,8 @@ class _AdminPageState extends State<AdminPage> {
                                 ),
                               if (controller.role == 'owner' ||
                                   controller.role == 'admin' ||
-                                  (controller.permissions?['manage_printer'] ?? true))
+                                  (controller.permissions?['manage_printer'] ??
+                                      true))
                                 AdminMenuItem(
                                   label: "Printer",
                                   icon: CupertinoIcons.printer,
@@ -298,7 +331,8 @@ class _AdminPageState extends State<AdminPage> {
                                   onTap: () => Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                      builder: (_) => const PrinterSettingsPage(),
+                                      builder: (_) =>
+                                          const PrinterSettingsPage(),
                                     ),
                                   ),
                                 ),
@@ -334,7 +368,14 @@ class _AdminPageState extends State<AdminPage> {
                                   label: "Lap. Shift",
                                   icon: CupertinoIcons.list_bullet_indent,
                                   color: Colors.blueAccent,
-                                  onTap: () {},
+                                  onTap: () => Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => ShiftReportPage(
+                                        storeId: controller.storeId!,
+                                      ),
+                                    ),
+                                  ),
                                 ),
                                 AdminMenuItem(
                                   label: "Penjualan",
@@ -427,9 +468,32 @@ class _AdminPageState extends State<AdminPage> {
               const SizedBox(height: 16),
               TextButton(
                 onPressed: () async {
-                  await supabase.auth.signOut();
-                  if (mounted) {
-                    Navigator.pushReplacementNamed(context, '/login');
+                  final shouldLogout = await showCupertinoDialog<bool>(
+                    context: context,
+                    builder: (context) => CupertinoAlertDialog(
+                      title: const Text("Konfirmasi Keluar"),
+                      content: const Text(
+                        "Apakah Anda yakin ingin keluar dari akun?",
+                      ),
+                      actions: [
+                        CupertinoDialogAction(
+                          child: const Text("Batal"),
+                          onPressed: () => Navigator.pop(context, false),
+                        ),
+                        CupertinoDialogAction(
+                          isDestructiveAction: true,
+                          child: const Text("Keluar"),
+                          onPressed: () => Navigator.pop(context, true),
+                        ),
+                      ],
+                    ),
+                  );
+
+                  if (shouldLogout == true) {
+                    await supabase.auth.signOut();
+                    if (mounted) {
+                      Navigator.pushReplacementNamed(context, '/login');
+                    }
                   }
                 },
                 child: Text(

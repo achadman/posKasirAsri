@@ -7,7 +7,13 @@ class AttendanceService {
   /// Get today's attendance log for a specific user
   Future<Map<String, dynamic>?> getTodayLog(String userId) async {
     final now = DateTime.now();
-    final startOfDay = DateTime(now.year, now.month, now.day).toIso8601String();
+    // Start of day in local time, converted to UTC
+    final startOfDay = DateTime(
+      now.year,
+      now.month,
+      now.day,
+    ).toUtc().toIso8601String();
+    // End of day in local time, converted to UTC
     final endOfDay = DateTime(
       now.year,
       now.month,
@@ -15,7 +21,7 @@ class AttendanceService {
       23,
       59,
       59,
-    ).toIso8601String();
+    ).toUtc().toIso8601String();
 
     try {
       final response = await _supabase
@@ -61,7 +67,7 @@ class AttendanceService {
     await _supabase.from('attendance_logs').insert({
       'user_id': userId,
       'store_id': storeId,
-      'clock_in': DateTime.now().toIso8601String(),
+      'clock_in': DateTime.now().toUtc().toIso8601String(),
       'notes': notes,
       'photo_url': photoUrl,
       'status': 'working',
@@ -82,7 +88,7 @@ class AttendanceService {
     await _supabase
         .from('attendance_logs')
         .update({
-          'clock_out': now.toIso8601String(),
+          'clock_out': now.toUtc().toIso8601String(),
           'status': 'finished',
           if (notes != null) 'notes': notes,
         })
