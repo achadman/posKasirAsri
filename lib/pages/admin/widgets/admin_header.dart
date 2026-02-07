@@ -72,6 +72,8 @@ class AdminHeader extends StatelessWidget {
                   children: [
                     Text(
                       userName ?? 'User',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: GoogleFonts.poppins(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
