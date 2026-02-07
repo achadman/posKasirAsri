@@ -12,6 +12,7 @@ class AdminController extends ChangeNotifier {
   String? _storeName;
   String? _storeLogo;
   String? _role;
+  Map<String, dynamic>? _permissions;
   bool _isInitializing = true;
   double _todaySales = 0;
   int _lowStockCount = 0;
@@ -26,6 +27,7 @@ class AdminController extends ChangeNotifier {
   String? get storeName => _storeName;
   String? get storeLogo => _storeLogo;
   String? get role => _role;
+  Map<String, dynamic>? get permissions => _permissions;
   bool get isInitializing => _isInitializing;
   double get todaySales => _todaySales;
   int get lowStockCount => _lowStockCount;
@@ -39,7 +41,7 @@ class AdminController extends ChangeNotifier {
 
       final profile = await supabase
           .from('profiles')
-          .select('store_id, full_name, role, avatar_url')
+          .select('store_id, full_name, role, avatar_url, permissions')
           .eq('id', user.id)
           .maybeSingle();
 
@@ -49,6 +51,7 @@ class AdminController extends ChangeNotifier {
         _userName = profile['full_name'] ?? user.email?.split('@')[0] ?? 'User';
         _role = profile['role'];
         _profileUrl = profile['avatar_url'];
+        _permissions = profile['permissions'];
 
         debugPrint(
           "AdminController: Profile loaded. userId: $_userId, storeId: $_storeId, role: $_role",

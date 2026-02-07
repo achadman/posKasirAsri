@@ -8,6 +8,7 @@ class AdminDrawer extends StatelessWidget {
   final String? storeName;
   final String? storeLogo;
   final String? role;
+  final Map<String, dynamic>? permissions;
   final Color primaryColor;
   final VoidCallback onProfileTap;
   final VoidCallback onInventoryTap;
@@ -26,6 +27,7 @@ class AdminDrawer extends StatelessWidget {
     this.storeName,
     this.storeLogo,
     this.role,
+    this.permissions,
     required this.primaryColor,
     required this.onProfileTap,
     required this.onInventoryTap,
@@ -61,68 +63,86 @@ class AdminDrawer extends StatelessWidget {
                   isActive: true,
                 ),
                 _buildDrawerSectionTitle("OPERASIONAL"),
-                _buildDrawerItem(
-                  context: context,
-                  icon: CupertinoIcons.cube_box,
-                  label: "Inventori Barang",
-                  onTap: () {
-                    Navigator.pop(context);
-                    onInventoryTap();
-                  },
-                ),
-                _buildDrawerItem(
-                  context: context,
-                  icon: CupertinoIcons.grid,
-                  label: "Manajemen Kategori",
-                  onTap: () {
-                    Navigator.pop(context);
-                    onCategoryTap();
-                  },
-                ),
+                if (role?.toLowerCase() == 'owner' ||
+                    role?.toLowerCase() == 'admin' ||
+                    (permissions?['manage_inventory'] ?? true))
+                  _buildDrawerItem(
+                    context: context,
+                    icon: CupertinoIcons.cube_box,
+                    label: "Inventori Barang",
+                    onTap: () {
+                      Navigator.pop(context);
+                      onInventoryTap();
+                    },
+                  ),
+                if (role?.toLowerCase() == 'owner' ||
+                    role?.toLowerCase() == 'admin' ||
+                    (permissions?['manage_categories'] ?? true))
+                  _buildDrawerItem(
+                    context: context,
+                    icon: CupertinoIcons.grid,
+                    label: "Manajemen Kategori",
+                    onTap: () {
+                      Navigator.pop(context);
+                      onCategoryTap();
+                    },
+                  ),
                 _buildDrawerItem(
                   context: context,
                   icon: CupertinoIcons.bag,
                   label: "Data Pembelian",
                   onTap: () {},
                 ),
-                _buildDrawerItem(
-                  context: context,
-                  icon: CupertinoIcons.cart,
-                  label: "Kasir (POS)",
-                  onTap: () {
-                    Navigator.pop(context);
-                    onKasirTap();
-                  },
-                ),
-                _buildDrawerItem(
-                  context: context,
-                  icon: CupertinoIcons.person_2,
-                  label: "Manajemen Karyawan",
-                  onTap: () {
-                    Navigator.pop(context);
-                    onEmployeeTap();
-                  },
-                ),
-                _buildDrawerItem(
-                  context: context,
-                  icon: CupertinoIcons.doc_text,
-                  label: "Riwayat Transaksi",
-                  onTap: () {
-                    Navigator.pop(context);
-                    onHistoryTap();
-                  },
-                ),
-                _buildDrawerItem(
-                  context: context,
-                  icon: CupertinoIcons.printer,
-                  label: "Pengaturan Printer",
-                  onTap: () {
-                    Navigator.pop(context);
-                    onPrinterTap();
-                  },
-                ),
                 if (role?.toLowerCase() == 'owner' ||
-                    role?.toLowerCase() == 'admin') ...[
+                    role?.toLowerCase() == 'admin' ||
+                    (permissions?['pos_access'] ?? true))
+                  _buildDrawerItem(
+                    context: context,
+                    icon: CupertinoIcons.cart,
+                    label: "Kasir (POS)",
+                    onTap: () {
+                      Navigator.pop(context);
+                      onKasirTap();
+                    },
+                  ),
+                if (role?.toLowerCase() == 'owner' ||
+                    role?.toLowerCase() == 'admin')
+                  _buildDrawerItem(
+                    context: context,
+                    icon: CupertinoIcons.person_2,
+                    label: "Manajemen Karyawan",
+                    onTap: () {
+                      Navigator.pop(context);
+                      onEmployeeTap();
+                    },
+                  ),
+                if (role?.toLowerCase() == 'owner' ||
+                    role?.toLowerCase() == 'admin' ||
+                    (permissions?['view_history'] ?? true))
+                  _buildDrawerItem(
+                    context: context,
+                    icon: CupertinoIcons.doc_text,
+                    label: "Riwayat Transaksi",
+                    onTap: () {
+                      Navigator.pop(context);
+                      onHistoryTap();
+                    },
+                  ),
+                if (role?.toLowerCase() == 'owner' ||
+                    role?.toLowerCase() == 'admin' ||
+                    (permissions?['manage_printer'] ?? true))
+                  _buildDrawerItem(
+                    context: context,
+                    icon: CupertinoIcons.printer,
+                    label: "Pengaturan Printer",
+                    onTap: () {
+                      Navigator.pop(context);
+                      onPrinterTap();
+                    },
+                  ),
+                if (role?.toLowerCase() == 'owner' ||
+                    role?.toLowerCase() == 'admin' ||
+                    (permissions?['view_reports'] ?? false)) ...[
                   _buildDrawerSectionTitle("LAINNYA"),
                   _buildDrawerItem(
                     context: context,

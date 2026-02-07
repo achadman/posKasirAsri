@@ -136,6 +136,7 @@ class _AdminPageState extends State<AdminPage> {
               MaterialPageRoute(builder: (_) => const PrinterSettingsPage()),
             ),
             role: controller.role,
+            permissions: controller.permissions,
             onLogoutTap: () async {
               await supabase.auth.signOut();
               if (!context.mounted) return;
@@ -196,47 +197,57 @@ class _AdminPageState extends State<AdminPage> {
                     padding: const EdgeInsets.all(20),
                     child: Column(
                       children: [
-                        _buildAnimatedSection(
-                          delay: 0,
-                          child: AdminMenuSection(
-                            title: "Manajemen Stok",
-                            icon: CupertinoIcons.cube_box,
-                            items: [
-                              AdminMenuItem(
-                                label: "Barang",
-                                icon: CupertinoIcons.doc_text_viewfinder,
-                                color: Colors.blue,
-                                onTap: () => Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) => InventoryPage(
-                                      storeId: controller.storeId!,
+                        if (controller.role == 'owner' ||
+                            controller.role == 'admin' ||
+                            (controller.permissions?['manage_inventory'] ?? true) ||
+                            (controller.permissions?['manage_categories'] ?? true))
+                          _buildAnimatedSection(
+                            delay: 0,
+                            child: AdminMenuSection(
+                              title: "Manajemen Stok",
+                              icon: CupertinoIcons.cube_box,
+                              items: [
+                                if (controller.role == 'owner' ||
+                                    controller.role == 'admin' ||
+                                    (controller.permissions?['manage_inventory'] ?? true))
+                                  AdminMenuItem(
+                                    label: "Barang",
+                                    icon: CupertinoIcons.doc_text_viewfinder,
+                                    color: Colors.blue,
+                                    onTap: () => Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) => InventoryPage(
+                                          storeId: controller.storeId!,
+                                        ),
+                                      ),
                                     ),
                                   ),
-                                ),
-                              ),
-                              AdminMenuItem(
-                                label: "Kategori",
-                                icon: CupertinoIcons.grid,
-                                color: Colors.indigo,
-                                onTap: () => Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) => CategoryPage(
-                                      storeId: controller.storeId!,
+                                if (controller.role == 'owner' ||
+                                    controller.role == 'admin' ||
+                                    (controller.permissions?['manage_categories'] ?? true))
+                                  AdminMenuItem(
+                                    label: "Kategori",
+                                    icon: CupertinoIcons.grid,
+                                    color: Colors.indigo,
+                                    onTap: () => Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) => CategoryPage(
+                                          storeId: controller.storeId!,
+                                        ),
+                                      ),
                                     ),
                                   ),
+                                AdminMenuItem(
+                                  label: "Pembelian",
+                                  icon: CupertinoIcons.bag,
+                                  color: Colors.lightBlue,
+                                  onTap: () {},
                                 ),
-                              ),
-                              AdminMenuItem(
-                                label: "Pembelian",
-                                icon: CupertinoIcons.bag,
-                                color: Colors.lightBlue,
-                                onTap: () {},
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
-                        ),
                         const SizedBox(height: 20),
                         _buildAnimatedSection(
                           delay: 200,
@@ -244,63 +255,75 @@ class _AdminPageState extends State<AdminPage> {
                             title: "Operasional Kasir",
                             icon: CupertinoIcons.cart,
                             items: [
-                              AdminMenuItem(
-                                label: "Transaksi",
-                                icon: CupertinoIcons.cart_badge_plus,
-                                color: Colors.orange,
-                                onTap: () async {
-                                  await Navigator.push(
+                              if (controller.role == 'owner' ||
+                                  controller.role == 'admin' ||
+                                  (controller.permissions?['pos_access'] ?? true))
+                                AdminMenuItem(
+                                  label: "Transaksi",
+                                  icon: CupertinoIcons.cart_badge_plus,
+                                  color: Colors.orange,
+                                  onTap: () async {
+                                    await Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) => const KasirPage(),
+                                      ),
+                                    );
+                                    controller.fetchDashboardStats();
+                                  },
+                                ),
+                              if (controller.role == 'owner' ||
+                                  controller.role == 'admin' ||
+                                  (controller.permissions?['view_history'] ?? true))
+                                AdminMenuItem(
+                                  label: "Riwayat",
+                                  icon: CupertinoIcons.doc_text,
+                                  color: Colors.purple,
+                                  onTap: () => Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                      builder: (_) => const KasirPage(),
-                                    ),
-                                  );
-                                  controller.fetchDashboardStats();
-                                },
-                              ),
-                              AdminMenuItem(
-                                label: "Riwayat",
-                                icon: CupertinoIcons.doc_text,
-                                color: Colors.purple,
-                                onTap: () => Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) => HistoryPage(
-                                      storeId: controller.storeId!,
+                                      builder: (_) => HistoryPage(
+                                        storeId: controller.storeId!,
+                                      ),
                                     ),
                                   ),
                                 ),
-                              ),
-                              AdminMenuItem(
-                                label: "Printer",
-                                icon: CupertinoIcons.printer,
-                                color: Colors.blueGrey,
-                                onTap: () => Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) => const PrinterSettingsPage(),
-                                  ),
-                                ),
-                              ),
-                              AdminMenuItem(
-                                label: "Karyawan",
-                                icon: CupertinoIcons.person_2,
-                                color: Colors.cyan,
-                                onTap: () => Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) => EmployeePage(
-                                      storeId: controller.storeId!,
+                              if (controller.role == 'owner' ||
+                                  controller.role == 'admin' ||
+                                  (controller.permissions?['manage_printer'] ?? true))
+                                AdminMenuItem(
+                                  label: "Printer",
+                                  icon: CupertinoIcons.printer,
+                                  color: Colors.blueGrey,
+                                  onTap: () => Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => const PrinterSettingsPage(),
                                     ),
                                   ),
                                 ),
-                              ),
+                              if (controller.role == 'owner' ||
+                                  controller.role == 'admin')
+                                AdminMenuItem(
+                                  label: "Karyawan",
+                                  icon: CupertinoIcons.person_2,
+                                  color: Colors.cyan,
+                                  onTap: () => Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => EmployeePage(
+                                        storeId: controller.storeId!,
+                                      ),
+                                    ),
+                                  ),
+                                ),
                             ],
                           ),
                         ),
                         const SizedBox(height: 20),
                         if (controller.role == 'owner' ||
-                            controller.role == 'admin')
+                            controller.role == 'admin' ||
+                            (controller.permissions?['view_reports'] ?? false))
                           _buildAnimatedSection(
                             delay: 400,
                             child: AdminMenuSection(

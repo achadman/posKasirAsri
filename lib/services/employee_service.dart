@@ -12,7 +12,7 @@ class EmployeeService {
   Future<List<Map<String, dynamic>>> getEmployees(String storeId) async {
     final response = await _supabase
         .from('profiles')
-        .select('*')
+        .select('*, permissions')
         .eq('store_id', storeId)
         .eq('role', 'cashier')
         .order('full_name', ascending: true);
@@ -26,6 +26,7 @@ class EmployeeService {
     required String password,
     required String fullName,
     required String storeId,
+    Map<String, bool>? permissions,
   }) async {
     // 1. Initialize a temporary client
     // We use implicit flow to avoid PKCE storage requirements for this temporary background client
@@ -39,7 +40,19 @@ class EmployeeService {
     final AuthResponse res = await tempClient.auth.signUp(
       email: email,
       password: password,
-      data: {'full_name': fullName, 'role': 'cashier'},
+      data: {
+        'full_name': fullName,
+        'role': 'cashier',
+        'permissions': permissions ??
+            {
+              'manage_inventory': false,
+              'manage_categories': false,
+              'pos_access': true,
+              'view_history': true,
+              'view_reports': false,
+              'manage_printer': true,
+            },
+      },
     );
 
     if (res.user != null) {
@@ -54,6 +67,15 @@ class EmployeeService {
               'full_name': fullName,
               'role': 'cashier',
               'store_id': storeId,
+              'permissions': permissions ??
+                  {
+                    'manage_inventory': false,
+                    'manage_categories': false,
+                    'pos_access': true,
+                    'view_history': true,
+                    'view_reports': false,
+                    'manage_printer': true,
+                  },
             })
             .eq('id', res.user!.id)
             .select();

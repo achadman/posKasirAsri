@@ -22,6 +22,15 @@ class _EmployeePageState extends State<EmployeePage> {
     final passwordController = TextEditingController();
     bool obscurePassword = true;
 
+    Map<String, bool> selectedPermissions = {
+      'manage_inventory': false,
+      'manage_categories': false,
+      'pos_access': true,
+      'view_history': true,
+      'view_reports': false,
+      'manage_printer': true,
+    };
+
     await showDialog(
       context: context,
       builder: (context) => StatefulBuilder(
@@ -43,6 +52,7 @@ class _EmployeePageState extends State<EmployeePage> {
             content: SingleChildScrollView(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   _buildDialogField(
                     controller: nameController,
@@ -69,6 +79,58 @@ class _EmployeePageState extends State<EmployeePage> {
                     onTogglePassword: () {
                       setDialogState(() => obscurePassword = !obscurePassword);
                     },
+                  ),
+                  const SizedBox(height: 24),
+                  Text(
+                    "Izin Akses Fitur",
+                    style: GoogleFonts.poppins(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: const Color(0xFFEA5700),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  _buildPermissionInDialog(
+                    label: "Akses Kasir (POS)",
+                    value: selectedPermissions['pos_access']!,
+                    onChanged: (v) =>
+                        setDialogState(() => selectedPermissions['pos_access'] = v!),
+                    isDark: isDark,
+                  ),
+                  _buildPermissionInDialog(
+                    label: "Kelola Produk & Stok",
+                    value: selectedPermissions['manage_inventory']!,
+                    onChanged: (v) =>
+                        setDialogState(() => selectedPermissions['manage_inventory'] = v!),
+                    isDark: isDark,
+                  ),
+                  _buildPermissionInDialog(
+                    label: "Kelola Kategori",
+                    value: selectedPermissions['manage_categories']!,
+                    onChanged: (v) =>
+                        setDialogState(() => selectedPermissions['manage_categories'] = v!),
+                    isDark: isDark,
+                  ),
+                  _buildPermissionInDialog(
+                    label: "Lihat Riwayat Saja",
+                    value: selectedPermissions['view_history']!,
+                    onChanged: (v) =>
+                        setDialogState(() => selectedPermissions['view_history'] = v!),
+                    isDark: isDark,
+                  ),
+                  _buildPermissionInDialog(
+                    label: "Lihat Laporan Detail",
+                    value: selectedPermissions['view_reports']!,
+                    onChanged: (v) =>
+                        setDialogState(() => selectedPermissions['view_reports'] = v!),
+                    isDark: isDark,
+                  ),
+                  _buildPermissionInDialog(
+                    label: "Pengaturan Printer",
+                    value: selectedPermissions['manage_printer']!,
+                    onChanged: (v) =>
+                        setDialogState(() => selectedPermissions['manage_printer'] = v!),
+                    isDark: isDark,
                   ),
                   const SizedBox(height: 20),
                   Text(
@@ -111,6 +173,7 @@ class _EmployeePageState extends State<EmployeePage> {
                       password: pass,
                       fullName: name,
                       storeId: widget.storeId,
+                      permissions: selectedPermissions,
                     );
                     if (mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
@@ -169,6 +232,29 @@ class _EmployeePageState extends State<EmployeePage> {
           );
         },
       ),
+    );
+  }
+
+  Widget _buildPermissionInDialog({
+    required String label,
+    required bool value,
+    required ValueChanged<bool?> onChanged,
+    required bool isDark,
+  }) {
+    return CheckboxListTile(
+      title: Text(
+        label,
+        style: GoogleFonts.inter(
+          fontSize: 13,
+          color: isDark ? Colors.white70 : Colors.black87,
+        ),
+      ),
+      value: value,
+      onChanged: onChanged,
+      activeColor: const Color(0xFFEA5700),
+      contentPadding: EdgeInsets.zero,
+      dense: true,
+      visualDensity: VisualDensity.compact,
     );
   }
 
